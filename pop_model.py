@@ -94,13 +94,14 @@ def events(pop_model: population_model.PopulationModel,
     """
     match t:
         case 0:
-            pop_model.add_seeds('rr', 900)
-            pop_model.add_seeds('RR', 110)
+            pop_model.add_seeds('rr', 10)
+            pop_model.add_seeds('Rr', 10)
         case t if t > 1:
             # Remove 80% of the 'rr' population.
             # TODO make this variable.
             count = pop_model.get_population()['rr']
-            pop_model.remove_seeds('rr', count*0.8)
+            # print('''Purging 80% of rr seeds.''')
+            # pop_model.remove_seeds('rr', count*0.8)
 
     return pop_model
 
@@ -117,15 +118,19 @@ def main(max_time=1) -> None:
             pop_model = population_model.PopulationModel()
         else:
             pop_model = deepcopy(iteration_history[t-1])
-        pop_model = events(pop_model, t)
         iteration_history.append(pop_model)
+
+        # Modify population model with any 'events' such as adding seeds.
+        pop_model = events(pop_model, t)
 
         # Model population changes after the start.
         if t > 0:
             results = pop_model.calculate_population_change()
 
         # Showing results.
-        print('  pop:', utils.round_dict_values(pop_model.get_population()))
+        population = pop_model.get_population()
+        print(f'  pop:', utils.round_dict_values(population),
+              ' total:', {round(sum(population.values()),2)})
         print('  freq:', utils.round_dict_values(pop_model.get_frequency()))
 
     return
