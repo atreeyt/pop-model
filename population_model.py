@@ -7,9 +7,12 @@ logger = logging.getLogger(__name__)
 
 
 class PopulationModel():
-    def __init__(self):
-        """Creates the SeedPopulation object with default chromosomes."""
-        self.seed_pop = seed_population.SeedPopulation(chromosome_dict={'RR','Rr','rR','rr'})
+    def __init__(self, chromosome_dict={'RR','Rr','rR','rr'}):
+        """Creates the SeedPopulation object with default chromosomes.
+        
+        default chromosomes = 'RR','Rr','rR','rr'.
+        """
+        self.seed_pop = seed_population.SeedPopulation(chromosome_dict=chromosome_dict)
         logger.debug('Created PopulationModel instance.')
 
     def add_seeds(self, chromosome, count) -> None:
@@ -22,11 +25,16 @@ class PopulationModel():
 
     def remove_seeds(self, chromosome, count) -> None:
         """Removes the given number of seeds from the population."""
-        
+        population = self.seed_pop.get_population(key=chromosome)[chromosome]
         # Case for removing all seeds of a type from the population.
         if count == -1:
-            count = self.seed_pop.get_population(key=chromosome)[chromosome]
-        # logger.info(f'remove_seeds: {chromosome} {count}')
+            count = population
+        if count > population:
+            logger.warning(f'Attempted to remove more seeds than currently in'
+                           f' the population: {chromosome},'
+                           f' current: {population}, to remove: {count}.'
+                           ' Removed whole population.')
+            count = population
         # Add a negative value (remove).
         self.add_seeds(chromosome, -count)
         return
@@ -65,9 +73,9 @@ class PopulationModel():
                         * 0.25
                 # TODO remove logger below, replace with something more helpful/formatted better
                 logger.debug(
-                    f'\t{sum(self.seed_pop.get_population().values())}'
+                    f'{sum(self.seed_pop.get_population().values())}'
                     f' * {frequency1:.3f} * {frequency2:.3f} * 0.25'
-                    f' = {new_seed:.3f} seeds/child'
+                    f' = {new_seed} seeds/child'
                 )
                 for child in children:
                     new_counts[child] += new_seed
@@ -77,19 +85,26 @@ class PopulationModel():
         return new_counts
 
     def get_population(self) -> dict:
-        """Returns the real count of each chromosome within the population."""
+        """Returns the real count of each chromosome within the population.
+        
+        e.g. {'rR': 3.75, 'rr': 21.25, 'RR': 1.25, 'Rr': 13.75}
+        """
         pop = self.seed_pop.get_population()
         logger.info(f'Population: {utils.round_dict_values(pop)}')
         return pop
     
     def get_frequency(self) -> dict:
-        """Returns the frequency of each chromosome within the population."""
+        """Returns the frequency of each chromosome within the population.
+        
+        e.g. {'rR': 0.09375, 'rr': 0.53125, 'RR': 0.03125, 'Rr': 0.34375}
+        """
         freq = self.seed_pop.get_frequency()
         logger.info(f'Frequency: {utils.round_dict_values(freq)}')
         return freq
 
     def _get_chromosome_pairing_output(self, chromosome1, chromosome2) -> list:
         """Gets all combinations/permutations (idk which) of two chromosomes."""
+        # TODO know which ^^
         if len(chromosome1) != 2 or len(chromosome2) != 2:
             print('Error: chromosome wrong length:', chromosome1, chromosome2)
 
