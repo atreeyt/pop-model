@@ -71,7 +71,7 @@ class PopulationModel():
                         * frequency1 \
                         * frequency2 \
                         * 0.25
-                # TODO remove logger below, replace with something more helpful/formatted better
+
                 logger.debug(
                     f'{sum(self.seed_pop.get_population().values())}'
                     f' * {frequency1:.3f} * {frequency2:.3f} * 0.25'

@@ -55,7 +55,6 @@ class SeedPopulation:
         If remove_others=True then ALL other seed values not within
             seed_count_dict are removed.
         """
-        # TODO error checking
         if remove_others:
             # Override all counts and replace dictionary.
             self.seed_counts = {}
