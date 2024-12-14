@@ -84,6 +84,24 @@ def config(use_logger=False, log_name=None, log_folder=None,
         )
     return
 
+def calculate_resistant_seed_freq_from_pop(seed_dictionary, susceptible_list = ['rr']) -> float:
+    population = sum(seed_dictionary.values())
+    total_count = 0
+    for chromosome, count in seed_dictionary.items():
+        if chromosome in susceptible_list:
+            continue
+        total_count += count
+    return total_count / population
+
+
+def calculate_resistant_seed_freq_from_freq(seed_freq_dictionary, susceptible_list = ['rr']) -> float:
+    total_count = 0
+    for chromosome, count in seed_freq_dictionary.items():
+        if chromosome in susceptible_list:
+            continue
+        total_count += count
+    return total_count
+
 def events(pop_model: population_model.PopulationModel,
            t: int) -> population_model.PopulationModel:
     """Define events that occur at time t. Returns modified population model.
@@ -94,14 +112,14 @@ def events(pop_model: population_model.PopulationModel,
     """
     match t:
         case 0:
-            pop_model.add_seeds('rr', 10)
-            pop_model.add_seeds('Rr', 10)
-        case t if t > 1:
+            pop_model.add_seeds('rr', 100_000)
+            pop_model.add_seeds('Rr', 1)
+        case t if t > 0:
             # Remove 80% of the 'rr' population.
             # TODO make this variable.
             count = pop_model.get_population()['rr']
-            # print('''Purging 80% of rr seeds.''')
-            # pop_model.remove_seeds('rr', count*0.8)
+            print('''Purging 80% of rr seeds.''')
+            pop_model.remove_seeds('rr', count*0.8)
 
     return pop_model
 
@@ -131,7 +149,9 @@ def main(max_time=1) -> None:
         population = pop_model.get_population()
         print(f'  pop:', utils.round_dict_values(population),
               ' total:', {round(sum(population.values()),2)})
-        print('  freq:', utils.round_dict_values(pop_model.get_frequency()))
+        frequency = pop_model.get_frequency()
+        print('  freq:', utils.round_dict_values(frequency))
+        print(f'frequency of resistant seeds: {calculate_resistant_seed_freq_from_freq(frequency):.3f}')
 
     return
 
