@@ -49,7 +49,7 @@ class PopulationModel():
         self.seed_pop.update_counts(count_dict, remove_others=remove_others)
         return
     
-    def calculate_population_change(self) -> dict:
+    def get_population_change(self) -> dict:
         """Calculate resultant children from two parents' chromosomes.
 
         Calculates the offspring for each chromosome pairing.
