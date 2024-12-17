@@ -84,7 +84,8 @@ def config(use_logger=False, log_name=None, log_folder=None,
         )
     return
 
-def calculate_resistant_seed_freq_from_pop(seed_dictionary, susceptible_list = ['rr']) -> float:
+def get_resistant_seed_freq_from_pop(seed_dictionary, 
+                                           susceptible_list = ['rr']) -> float:
     population = sum(seed_dictionary.values())
     total_count = 0
     for chromosome, count in seed_dictionary.items():
@@ -94,7 +95,8 @@ def calculate_resistant_seed_freq_from_pop(seed_dictionary, susceptible_list = [
     return total_count / population
 
 
-def calculate_resistant_seed_freq_from_freq(seed_freq_dictionary, susceptible_list = ['rr']) -> float:
+def get_resistant_seed_freq_from_freq(seed_freq_dictionary,
+                                            susceptible_list = ['rr']) -> float:
     total_count = 0
     for chromosome, count in seed_freq_dictionary.items():
         if chromosome in susceptible_list:
@@ -143,7 +145,7 @@ def main(max_time=1) -> None:
 
         # Model population changes after the start.
         if t > 0:
-            results = pop_model.calculate_population_change()
+            results = pop_model.get_population_change()
 
         # Showing results.
         population = pop_model.get_population()
@@ -151,7 +153,7 @@ def main(max_time=1) -> None:
               ' total:', {round(sum(population.values()),2)})
         frequency = pop_model.get_frequency()
         print('  freq:', utils.round_dict_values(frequency))
-        print(f'frequency of resistant seeds: {calculate_resistant_seed_freq_from_freq(frequency):.3f}')
+        print(f'frequency of resistant seeds: {get_resistant_seed_freq_from_freq(frequency):.3f}')
 
     return
 
