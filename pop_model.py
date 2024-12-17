@@ -104,6 +104,15 @@ def get_resistant_seed_freq_from_freq(seed_freq_dictionary,
         total_count += count
     return total_count
 
+def get_population_history(
+        iteration_history: list[population_model.PopulationModel]) -> list:
+    return [ sum(t.get_population().values()) for t in iteration_history ]
+
+def get_resistance_history(
+        iteration_history: list[population_model.PopulationModel]) -> list:
+    [ get_resistant_seed_freq_from_freq(t.get_frequency()) for t in iteration_history ]
+
+
 def events(pop_model: population_model.PopulationModel,
            t: int) -> population_model.PopulationModel:
     """Define events that occur at time t. Returns modified population model.
@@ -154,6 +163,11 @@ def main(max_time=1) -> None:
         frequency = pop_model.get_frequency()
         print('  freq:', utils.round_dict_values(frequency))
         print(f'frequency of resistant seeds: {get_resistant_seed_freq_from_freq(frequency):.3f}')
+
+        # Print lists of population and resistance history for graphs.
+        # TODO matplotlib
+        print(get_population_history(iteration_history))
+        print(get_resistance_history(iteration_history))
 
     return
 
