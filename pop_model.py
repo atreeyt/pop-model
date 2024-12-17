@@ -159,7 +159,7 @@ def main(max_time=1) -> None:
         # Showing results.
         population = pop_model.get_population()
         print(f'  pop:', utils.round_dict_values(population),
-              ' total:', {round(sum(population.values()),2)})
+              f' total: {round(sum(population.values()),2):_}')
         frequency = pop_model.get_frequency()
         print('  freq:', utils.round_dict_values(frequency))
         print(f'frequency of resistant seeds: {get_resistant_seed_freq_from_freq(frequency):.3f}')
