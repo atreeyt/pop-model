@@ -123,7 +123,7 @@ def events(pop_model: population_model.PopulationModel,
     """
     match t:
         case 0:
-            pop_model.add_seeds('rr', 100_000)
+            pop_model.add_seeds('rr', 100_000_000)
             pop_model.add_seeds('Rr', 1)
         case t if t > 0:
             # Remove 80% of the 'rr' population.
@@ -164,10 +164,10 @@ def main(max_time=1) -> None:
         print('  freq:', utils.round_dict_values(frequency))
         print(f'frequency of resistant seeds: {get_resistant_seed_freq_from_freq(frequency):.3f}')
 
-        # Print lists of population and resistance history for graphs.
-        # TODO matplotlib
-        print(get_population_history(iteration_history))
-        print(get_resistance_history(iteration_history))
+    # Print lists of population and resistance history for graphs.
+    # TODO matplotlib
+    print(get_population_history(iteration_history))
+    print(get_resistance_history(iteration_history))
 
     return
 
