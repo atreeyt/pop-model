@@ -54,6 +54,29 @@ class PopulationModel:
         self.seed_pop.update_counts(count_dict, remove_others=remove_others)
         return
 
+    def purge_population(self, amount_to_remove, chromosome="rr") -> None:
+        """Remove an absolute value or percentage from the seed population.
+
+        The amount to remove is assumed to be a percentage if <=1. This action
+        is printed to the console for clarity to the user. If this is not
+        desirable use remove_seeds() for silent usage.
+        """
+        if amount_to_remove < 0:
+            logging.warning(
+                "Attempted population purge with negative value, ignoring."
+            )
+            return
+        # Assume percentage.
+        if amount_to_remove <= 1:
+            count = self.get_population()[chromosome]
+            print(f"Purging {amount_to_remove*100}% of {chromosome} seeds.")
+            self.remove_seeds(chromosome, count * amount_to_remove)
+            return
+        # Otherwise assume absolute value.
+        print(f"Removing {amount_to_remove} {chromosome} seeds.")
+        self.remove_seeds(chromosome, count)
+        return
+
     def get_population_change(self) -> dict:
         """Calculate resultant children from two parents' chromosomes.
 
