@@ -150,7 +150,7 @@ class PopulationModel:
     def _split_chromosome(self, chromosome) -> list:
         """Split a chromosome into its parts e.g. XY becomes ['X','Y'].
 
-        This is split to allow for expansion later.
+        This is a separate function to allow for expansion later.
         """
         genes = []
         for gene in chromosome:
