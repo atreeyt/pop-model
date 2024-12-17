@@ -165,9 +165,7 @@ def events(
         case t if t > 0:
             # Remove 80% of the 'rr' population.
             # TODO make this variable.
-            count = pop_model.get_population()["rr"]
-            print("""Purging 80% of rr seeds.""")
-            pop_model.remove_seeds("rr", count * 0.9)
+            pop_model.purge_population(0.8)
 
     return pop_model
 
