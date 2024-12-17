@@ -140,8 +140,12 @@ class PopulationModel:
         return freq
 
     def _get_chromosome_pairing_output(self, chromosome1, chromosome2) -> list:
-        """Gets all combinations/permutations (idk which) of two chromosomes."""
-        # TODO know which ^^
+        """Gets all permutations of two chromosomes e.g. Rr+Rr->['RR','Rr','rR','rr'].
+
+        Whilst this function returns permutations (e.g. Rr and rR are different
+        chromosomes, this is not the case in genetics where rR is usually also
+        shown as Rr. This process in genetics is actually combinations (order
+        does not matter)."""
         if len(chromosome1) != 2 or len(chromosome2) != 2:
             print("Error: chromosome wrong length:", chromosome1, chromosome2)
 
