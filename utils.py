@@ -7,3 +7,7 @@ def round_dict_values(dictionary, n=3):
 
     rounded = {key: float(f"{val:.{n}f}") for key, val in dictionary.items()}
     return rounded
+
+
+def is_even(num: int) -> bool:
+    return True if num == 0 else num % 2 == 0
