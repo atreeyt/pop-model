@@ -114,6 +114,7 @@ def config(
 def get_resistant_seed_freq_from_pop(
     seed_dictionary, susceptible_list=["rr"]
 ) -> float:
+    """TODO"""
     population = sum(seed_dictionary.values())
     total_count = 0
     for chromosome, count in seed_dictionary.items():
@@ -126,6 +127,7 @@ def get_resistant_seed_freq_from_pop(
 def get_resistant_seed_freq_from_freq(
     seed_freq_dictionary, susceptible_list=["rr"]
 ) -> float:
+    """TODO"""
     total_count = 0
     for chromosome, count in seed_freq_dictionary.items():
         if chromosome in susceptible_list:
@@ -137,12 +139,14 @@ def get_resistant_seed_freq_from_freq(
 def get_population_history(
     iteration_history: list[population_model.PopulationModel],
 ) -> list:
+    """TODO"""
     return [sum(t.get_population().values()) for t in iteration_history]
 
 
 def get_resistance_history(
     iteration_history: list[population_model.PopulationModel],
 ) -> list:
+    """TODO"""
     return [
         get_resistant_seed_freq_from_freq(t.get_frequency())
         for t in iteration_history
@@ -162,10 +166,14 @@ def events(
         case 0:
             pop_model.add_seeds("rr", 100_000_000)
             pop_model.add_seeds("Rr", 1)
-        case t if t > 0:
-            # Remove 80% of the 'rr' population.
-            # TODO make this variable.
-            pop_model.purge_population(0.8)
+        # case t if t > 0:
+        #     # Remove 80% of the 'rr' population.
+        #     # TODO make this variable.
+        #     pop_model.purge_population(0.8)
+        case t if utils.is_even(t):
+            pop_model.purge_population(0.8, ["rr"])
+        case t if not utils.is_even(t):
+            pop_model.purge_population(0.4, ["rr", "rR", "Rr", "RR"])
 
     return pop_model
 
