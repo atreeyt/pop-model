@@ -171,8 +171,10 @@ def events(
         #     # TODO make this variable.
         #     pop_model.purge_population(0.8)
         case t if utils.is_even(t):
+            # An effective herbicide but only targeting susceptible individuals.
             pop_model.purge_population(0.8, ["rr"])
         case t if not utils.is_even(t):
+            # Herbicide with less efficacy but different mode of action, all seeds susceptible.
             pop_model.purge_population(0.4, ["rr", "rR", "Rr", "RR"])
 
     return pop_model
