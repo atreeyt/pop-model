@@ -55,13 +55,18 @@ class PopulationModel:
         return
 
     def purge_population(
-        self, amount_to_remove, chromosome="rr", print_to_console=True
+        self, amount_to_remove, chromosome_list, print_to_console=True
     ) -> None:
         """Remove an absolute value or percentage from the seed population.
 
-        The amount to remove is assumed to be a percentage if <=1. This action
-        is printed to the console for clarity to the user. If this is not
-        desirable use print_to_console=False or remove_seeds() for silent usage.
+        The amount to remove is assumed to be a percentage if <=1.
+
+        This action is printed to the console for clarity to the user.
+            If this is not desirable use print_to_console=False or
+            remove_seeds() for silent usage.
+
+        chromosome_list is a list of chromosomes to remove,
+            e.g. ["rr"] or ["rR", "Rr", "rr"].
         """
         if amount_to_remove < 0:
             logging.warning(
@@ -70,15 +75,21 @@ class PopulationModel:
             return
         # Assume percentage.
         if amount_to_remove <= 1:
-            count = self.get_population()[chromosome]
-            if print_to_console:
-                print(f"Purging {amount_to_remove*100}% of {chromosome} seeds.")
-            self.remove_seeds(chromosome, count * amount_to_remove)
+            if not chromosome_list:
+                chromosome_list = self.get_population().keys()
+            for chromosome in chromosome_list:
+                count = self.get_population()[chromosome]
+                if print_to_console:
+                    print(
+                        f"Purging {amount_to_remove*100}% of {chromosome} seeds."
+                    )
+                self.remove_seeds(chromosome, count * amount_to_remove)
             return
         # Otherwise assume absolute value.
-        if print_to_console:
-            print(f"Removing {amount_to_remove} {chromosome} seeds.")
-        self.remove_seeds(chromosome, count)
+        for chromosome in chromosome_list:
+            if print_to_console:
+                print(f"Removing {amount_to_remove} {chromosome} seeds.")
+            self.remove_seeds(chromosome, count)
         return
 
     def get_population_change(self) -> dict:
