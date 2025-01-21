@@ -5,6 +5,7 @@ from copy import deepcopy
 
 import population_model
 import utils
+import observer_model
 
 
 def parse_arguments() -> argparse.ArgumentParser:
@@ -164,7 +165,7 @@ def events(
     """
     match t:
         case 0:
-            pop_model.add_seeds("rr", 100_000_000)
+            pop_model.add_seeds("rr", 100)
             pop_model.add_seeds("Rr", 1)
         # case t if t > 0:
         #     # Remove 80% of the 'rr' population.
@@ -222,6 +223,27 @@ def main(max_time=1) -> None:
     print(get_population_history(iteration_history))
     print("\nfrequency history:")
     print(get_resistance_history(iteration_history))
+
+    print("\n\n NOISY OBSERVER\n----------------")
+    observer = observer_model.ObserverModel(
+        observation_accuracy=0.9, noise_standard_dev=0.05
+    )
+    for t, model in enumerate(iteration_history):
+        print(f"--- Time {t} ---")
+        # print("model.get_population():", model.get_population())
+        population = observer.observe(model, noisy=True)
+        print(
+            f"  pop:",
+            utils.round_dict_values(population),
+            f" total: {round(sum(population.values()),2):_}",
+        )
+        population = model.get_population()
+        print("actual population:")
+        print(
+            f"  pop:",
+            utils.round_dict_values(population),
+            f" total: {round(sum(population.values()),2):_}",
+        )
 
     return
 
