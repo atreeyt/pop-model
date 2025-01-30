@@ -182,6 +182,32 @@ def calculate_year_from_t(t, time_steps_per_year) -> int:
     return ceil(t / time_steps_per_year)
 
 
+def pretty_print_dict(dictionary, indent=0, use_tabs=False) -> None:
+    for key, val in dictionary.items():
+        char = "\t" if use_tabs else " "
+        print(f"{char*indent}{key} : {val}")
+    return
+
+
+def print_population_stats(
+    pop_model: population_model.PopulationModel, location, n_digits=3
+) -> None:
+
+    population = pop_model.get_population(location=location)
+    print("    Population:")
+    pretty_print_dict(utils.round_dict_values(population, n=n_digits), indent=8)
+    print("        TOTAL :", round(sum(population.values()), 2))
+
+    frequency = pop_model.get_frequency(location=location)
+    print("    Frequency:")
+    pretty_print_dict(utils.round_dict_values(frequency, n=n_digits), indent=8)
+    print(
+        "Frequency of resistant seeds:"
+        f" {get_resistant_seed_freq_from_freq(frequency):.3f}"
+    )
+    return
+
+
 def events(
     pop_model: population_model.PopulationModel, t: int
 ) -> population_model.PopulationModel:
@@ -227,7 +253,9 @@ def main(max_time=1) -> None:
 
     # Compute for number of time steps t.
     for t in range(0, max_time + 1):
-        print(f"\n\n--- Time {t} ---")
+        print(
+            f"\n\n--- Time {t}, year {calculate_year_from_t(t,TIME_STEPS_PER_YEAR)} ---"
+        )
         if t == 0:
             pop_model = population_model.PopulationModel()
         else:
@@ -242,18 +270,10 @@ def main(max_time=1) -> None:
             results = pop_model.apply_population_change()
 
         # Showing results.
-        population = pop_model.get_population(location="overground")
-        print(
-            f"  pop:",
-            utils.round_dict_values(population),  # ),
-            # f" total: {round(sum(population.values()),2):_}",
-        )
-        frequency = pop_model.get_frequency(location="overground")
-        print("  freq:", utils.round_dict_values(frequency))
-        print(
-            "frequency of resistant seeds:"
-            f" {get_resistant_seed_freq_from_freq(frequency):.3f}"
-        )
+        print("  --OVERGROUND--")
+        print_population_stats(pop_model, "overground")
+        print("  --UNDERGROUND--")
+        print_population_stats(pop_model, "underground")
 
     # Print lists of population and resistance history for graphs.
     # TODO matplotlib
@@ -262,26 +282,27 @@ def main(max_time=1) -> None:
     print("\nfrequency history:")
     print(get_resistance_history(iteration_history, location="overground"))
 
-    print("\n\n NOISY OBSERVER\n----------------")
-    observer = observer_model.ObserverModel(
-        observation_accuracy=0.9, noise_standard_dev=0.05
-    )
-    for t, model in enumerate(iteration_history):
-        print(f"\n\n--- Time {t} ---")
-        # print("model.get_population():", model.get_population())
-        population = observer.observe(model, noisy=True)
-        print(
-            f"  pop:",
-            utils.round_dict_values(population),
-            f" total: {round(sum(population.values()),2):_}",
-        )
-        population = model.get_population(location="overground")
-        print("actual population:")
-        print(
-            f"  pop:",
-            utils.round_dict_values(population),
-            f" total: {round(sum(population.values()),2):_}",
-        )
+    # print("\n\n NOISY OBSERVER\n----------------")
+    # observer = observer_model.ObserverModel(
+    #     observation_accuracy=0.9, noise_standard_dev=0.05
+    # )
+    # for t, model in enumerate(iteration_history):
+    #     print(f"\n\n--- Time {t} ---")
+    #     # print("model.get_population():", model.get_population())
+    #     population = observer.observe(model, noisy=True)
+    #     print(f"  pop:")
+    #     pretty_print_dict(utils.round_dict_values(population), indent=4)
+    #     print("    TOTAL :", round(sum(population.values()), 2))
+    #     #     ,
+    #     #     f" total: {round(sum(population.values()),2):_}",
+    #     # )
+    #     population = model.get_population(location="overground")
+    #     print("actual population:")
+    #     print(
+    #         f"  pop:",
+    #         utils.round_dict_values(population),
+    #         f" total: {round(sum(population.values()),2):_}",
+    #     )
 
     return
 
