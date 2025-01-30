@@ -22,9 +22,9 @@ class ObserverModel:
         logger.info(
             f"Accuracy set to {self.observation_accuracy},"
             f" noise set to {self.observation_noise_standard_dev}."
-            f" This means practical minimum is:"
+            " This means practical minimum is:"
             f" {round(self.observation_accuracy-3*self.observation_noise_standard_dev,2)}"
-            f" and practical maximum is"
+            " and practical maximum is"
             f" {round(self.observation_accuracy+3*self.observation_noise_standard_dev,2)}"
         )
 
@@ -52,7 +52,7 @@ class ObserverModel:
             accuracy = self.get_noisy_accuracy(
                 accuracy, self.observation_noise_standard_dev
             )
-        population = deepcopy(pop_model.get_population())
+        population = deepcopy(pop_model.get_population(location="overground"))
         for key, val in population.items():
             # Accuracy is returned as a list, but only has one value.
             population[key] = val * accuracy[0]
@@ -70,9 +70,8 @@ class ObserverModel:
 
         TODO
         """
-        noise = np.random.normal(
-            accuracy, noise_standard_dev, amount_to_return
-        )
+        # TODO change from gaussian to a different distribution (idk which)
+        noise = np.random.normal(accuracy, noise_standard_dev, amount_to_return)
         # Numpy returns an array of Numpy float types, so we convert here to
         # a regular list with regular floats. Round if required.
         noise_list = list(map(float, noise))
