@@ -54,31 +54,31 @@ class SeedPopulation:
         logger.debug(f"get_frequency: {freq}")
         return freq
 
-    def update_counts(
-        self, seed_count_dict, replace=False, remove_others=False
-    ) -> None:
-        """Replaces/updates the values for the seed count.
+    # def update_counts(
+    #     self, seed_count_dict, replace=False, remove_others=False
+    # ) -> None:
+    #     """Replaces/updates the values for the seed count.
 
-        If replace=True then the seed count is replaced, otherwise it is
-        added. This addition can be negative. If remove_others=True then
-        ALL other seed values not within seed_count_dict are removed.
-        """
-        if remove_others:
-            # Override all counts and replace dictionary.
-            self.seed_counts = {}
-        # Only replace given key-val pairs.
-        for key, val in seed_count_dict.items():
-            if replace or remove_others:
-                self.seed_counts[key] = val
-            else:
-                self.seed_counts[key] += val
-                if self.seed_counts[key] < 0:
-                    logger.warning(
-                        f"{self.seed_counts[key]} population is <0, setting to 0."
-                    )
-        logger.debug(f"Updated counts (remove_others={remove_others}):")
-        logger.debug(f"    {seed_count_dict} to {self.seed_counts}")
-        return
+    #     If replace=True then the seed count is replaced, otherwise it is
+    #     added. This addition can be negative. If remove_others=True then
+    #     ALL other seed values not within seed_count_dict are removed.
+    #     """
+    #     if remove_others:
+    #         # Override all counts and replace dictionary.
+    #         self.seed_counts = {}
+    #     # Only replace given key-val pairs.
+    #     for key, val in seed_count_dict.items():
+    #         if replace or remove_others:
+    #             self.seed_counts[key] = val
+    #         else:
+    #             self.seed_counts[key] += val
+    #             if self.seed_counts[key] < 0:
+    #                 logger.warning(
+    #                     f"{self.seed_counts[key]} population is <0, setting to 0."
+    #                 )
+    #     logger.debug(f"Updated counts (remove_others={remove_others}):")
+    #     logger.debug(f"    {seed_count_dict} to {self.seed_counts}")
+    #     return
 
     def add_seeds(self, chromosome, count) -> None:
         """Increase value in seed_counts dict of chromosome key by count.
@@ -105,8 +105,9 @@ class SeedPopulation:
                 " this seed type does not exist in the population. No effect."
             )
             return
+
         current_count = self.seed_counts[chromosome]
-        if current_count - count < 0:
+        if current_count < count:
             logger.warning(
                 f"Attempted to remove {count} {chromosome} seeds from population when"
                 f" only {current_count} seeds exist. Setting to 0."
