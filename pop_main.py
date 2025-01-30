@@ -11,9 +11,7 @@ import observer_model
 def parse_arguments() -> argparse.ArgumentParser:
     """Parses command line arguments."""
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument(
-        "-t", help="max number of timesteps", dest="maxtime", type=int
-    )
+    parser.add_argument("-t", help="max number of timesteps", dest="maxtime", type=int)
     parser.add_argument(
         "-l",
         "--log",
@@ -23,7 +21,7 @@ def parse_arguments() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--log_file",
-        help='Log file name. Should end with ".log".' ' Default "basic.log".',
+        help='Log file name. Should end with ".log". Default "basic.log".',
         dest="log_name",
         default=None,
     )
@@ -36,9 +34,11 @@ def parse_arguments() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--level",
-        help="Set logging level"
-        " [debug, info, warning, error, critical]"
-        " (default warning), overrides -v",
+        help=(
+            "Set logging level"
+            " [debug, info, warning, error, critical]"
+            " (default warning), overrides -v"
+        ),
         dest="log_level",
         default=None,
     )
@@ -112,9 +112,7 @@ def config(
     return
 
 
-def get_resistant_seed_freq_from_pop(
-    seed_dictionary, susceptible_list=["rr"]
-) -> float:
+def get_resistant_seed_freq_from_pop(seed_dictionary, susceptible_list=["rr"]) -> float:
     """TODO"""
     population = sum(seed_dictionary.values())
     total_count = 0
@@ -141,7 +139,9 @@ def get_population_history(
     iteration_history: list[population_model.PopulationModel],
 ) -> list:
     """TODO"""
-    return [sum(t.get_population().values()) for t in iteration_history]
+    return [
+        sum(t.get_population(location="overground").values()) for t in iteration_history
+    ]
 
 
 def get_resistance_history(
@@ -149,7 +149,7 @@ def get_resistance_history(
 ) -> list:
     """TODO"""
     return [
-        get_resistant_seed_freq_from_freq(t.get_frequency())
+        get_resistant_seed_freq_from_freq(t.get_frequency(location="overground"))
         for t in iteration_history
     ]
 
@@ -159,24 +159,24 @@ def events(
 ) -> population_model.PopulationModel:
     """Define events that occur at time t. Returns modified population model.
 
-    At times t, certain events can happen to a population, such as culling
-    a susceptible population. These changes occur here and the resultant
-    population model is returned.
+    At times t, certain events can happen to a population, such as culling a susceptible population. These changes occur here and the resultant population model is returned.
     """
     match t:
         case 0:
-            pop_model.add_seeds("rr", 100)
-            pop_model.add_seeds("Rr", 1)
+            pop_model.add_seeds("rr", 100, location="underground")
+            pop_model.add_seeds("Rr", 1, location="underground")
         # case t if t > 0:
         #     # Remove 80% of the 'rr' population.
         #     # TODO make this variable.
         #     pop_model.purge_population(0.8)
         case t if utils.is_even(t):
             # An effective herbicide but only targeting susceptible individuals.
-            pop_model.purge_population(0.8, ["rr"])
+            pop_model.purge_population(0.8, ["rr"], location="overground")
         case t if not utils.is_even(t):
             # Herbicide with less efficacy but different mode of action, all seeds susceptible.
-            pop_model.purge_population(0.4, ["rr", "rR", "Rr", "RR"])
+            pop_model.purge_population(
+                0.4, ["rr", "rR", "Rr", "RR"], location="overground"
+            )
 
     return pop_model
 
@@ -204,13 +204,13 @@ def main(max_time=1) -> None:
             results = pop_model.get_population_change()
 
         # Showing results.
-        population = pop_model.get_population()
+        population = pop_model.get_population(location="overground")
         print(
             f"  pop:",
-            utils.round_dict_values(population),
-            f" total: {round(sum(population.values()),2):_}",
+            utils.round_dict_values(population),  # ),
+            # f" total: {round(sum(population.values()),2):_}",
         )
-        frequency = pop_model.get_frequency()
+        frequency = pop_model.get_frequency(location="overground")
         print("  freq:", utils.round_dict_values(frequency))
         print(
             "frequency of resistant seeds:"
@@ -237,7 +237,7 @@ def main(max_time=1) -> None:
             utils.round_dict_values(population),
             f" total: {round(sum(population.values()),2):_}",
         )
-        population = model.get_population()
+        population = model.get_population(location="overground")
         print("actual population:")
         print(
             f"  pop:",
