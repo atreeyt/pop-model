@@ -9,6 +9,11 @@ class SeedPopulation:
     The seeds are modelled as a simple one chromosome plant (haploidy).
     This is expressed as a dominant resistant (R) gene and a recessive
     susceptible (r) gene.
+
+    Attributes:
+        seed_counts : dict
+            Stores the chromosome types of the population and their
+            respective counts.
     """
 
     def __init__(self, chromosome_dict={"RR", "Rr", "rR", "rr"}):
@@ -20,7 +25,9 @@ class SeedPopulation:
         logger.debug("SeedPopulation instance created.")
 
     def get_population(self, key=None) -> dict:
-        """Return the population statistics."""
+        """Return the population statistics. Returns dict.
+
+        e.g. {"RR": 0, "Rr": 30, "rR": 30, "rr": 1000}."""
         if key:
             return {key: self.seed_counts[key]}
         return self.seed_counts
@@ -34,9 +41,7 @@ class SeedPopulation:
         total_seeds = sum(self.seed_counts.values())
         # Guard against division by 0.
         if total_seeds == 0:
-            logger.debug(
-                "get_frequency: seed_count is empty, returning zeroes."
-            )
+            logger.debug("get_frequency: seed_count is empty, returning zeroes.")
             return dict.fromkeys(self.seed_counts.keys(), 0.0)
 
         freq = {}
@@ -54,10 +59,9 @@ class SeedPopulation:
     ) -> None:
         """Replaces/updates the values for the seed count.
 
-        If replace=True then the seed count is replaced, otherwise it is added.
-            This addition can be negative.
-        If remove_others=True then ALL other seed values not within
-            seed_count_dict are removed.
+        If replace=True then the seed count is replaced, otherwise it is
+        added. This addition can be negative. If remove_others=True then
+        ALL other seed values not within seed_count_dict are removed.
         """
         if remove_others:
             # Override all counts and replace dictionary.
@@ -76,8 +80,59 @@ class SeedPopulation:
         logger.debug(f"    {seed_count_dict} to {self.seed_counts}")
         return
 
+    def add_seeds(self, chromosome, count) -> None:
+        """Increase value in seed_counts dict of chromosome key by count.
+
+        Warning given for adding seeds of an unknown chromosome."""
+        if not chromosome in self.seed_counts.keys():
+            logger.warning(
+                f"Seed type {chromosome} does not exist in population already."
+                f" Adding {count} seeds. Is this expected?"
+            )
+            self.seed_counts[chromosome] = 0
+        self.seed_counts[chromosome] += count
+        return
+
+    def remove_seeds(self, chromosome, count) -> None:
+        """Set value to 0 in seed_counts dict for chromosome key.
+
+        Warnings are given for unknown an chromosome or for removing
+        more seeds than are currently in the population.
+        """
+        if not chromosome in self.seed_counts.keys():
+            logger.warning(
+                f"Attempted to remove {count} {chromosome} seeds from population but"
+                " this seed type does not exist in the population. No effect."
+            )
+            return
+        current_count = self.seed_counts[chromosome]
+        if current_count - count < 0:
+            logger.warning(
+                f"Attempted to remove {count} {chromosome} seeds from population when"
+                f" only {current_count} seeds exist. Setting to 0."
+            )
+            self.seed_counts[chromosome] = 0
+        else:
+            self.seed_counts[chromosome] -= count
+        return
+
+    def replace_seeds(self, chromosome, count):
+        """Replace the value in seed_counts dict with new count for chromosome key.
+
+        A warning is given for attempting to replace seeds of an unknown
+        chromosome. In this case the seeds are ADDED to the population.
+        """
+        if not chromosome in self.seed_counts.keys():
+            logger.warning(
+                f"Attempted to replace {count} {chromosome} seeds from population but"
+                " this seed type does not exist in the population. ADDING seeds of new"
+                " type. Is this expected behaviour?"
+            )
+        self.seed_counts[chromosome] = count
+        return
+
     def get_blank_count_dict(self) -> dict:
-        """Creates a population dict with each value set to 0 but with keys."""
+        """Return a dict with the same keys as seed_counts with each value set to 0."""
         blank_dict = {}
         for key in self.seed_counts.keys():
             blank_dict[key] = 0
