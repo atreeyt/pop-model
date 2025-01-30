@@ -60,16 +60,21 @@ class PopulationModel:
         # TODO ? Add stochastic rate.
         if rate < 0 or rate == 0 or rate > 1:
             logger.warning(f"germinate_seeds has a unexpected rate: {rate}")
-        pop_dict = self.seed_pop_underground.get_population()
 
+        pop_dict = self.seed_pop_underground.get_population()
         seeds_dict = {key: pop_dict[key] * rate for key in pop_dict.keys()}
+
         # Germinated seeds are added to the overground population and
         # removed from the underground population.
-        self.seed_pop_overground.update_counts(
-            seeds_dict, replace=False, remove_others=False
-        )
-        for chromosome, count in seeds_dict:
-            self.remove_seeds(chromosome, count)
+        # TODO remove below
+        # self.seed_pop_overground.update_counts(
+        #     seeds_dict, replace=False, remove_others=False
+        # )
+        logging.error(seeds_dict)
+        for chromosome, count in seeds_dict.items():
+            self.add_seeds(chromosome, count, location="overground")
+        for chromosome, count in seeds_dict.items():
+            self.remove_seeds(chromosome, count, location="underground")
         return
 
     def return_seeds_to_seedbank(self, rate=1.0) -> None:
@@ -197,7 +202,7 @@ class PopulationModel:
 
         return
 
-    def get_population_change(self) -> dict:
+    def apply_population_change(self) -> dict:
         """Calculate resultant children from two parents' chromosomes.
 
         Calculates the offspring for each chromosome pairing.
@@ -243,7 +248,7 @@ class PopulationModel:
 
         seed_pop = self._get_population_object(location)
         population = seed_pop.get_population()
-        logger.info(f"Population: {population}")
+        logger.debug(f"Population: {population}")
         return population
 
         underground_pop = self.seed_pop_underground.get_population()
@@ -256,13 +261,14 @@ class PopulationModel:
         """Returns the frequency of each chromosome within the
         population.
 
-        location: ['underground','overground']
+        location : ['underground','overground']
+        n_decimals : int : number of decimals to round dict values to.
         e.g. {'rR': 0.09375, 'rr': 0.53125, 'RR': 0.03125,
         'Rr': 0.34375}
         """
         seed_pop = self._get_population_object(location)
         freq = seed_pop.get_frequency()
-        logger.info(f"Frequency: {freq}")
+        logger.debug(f"Frequency: {freq}")
         return freq
 
     def _get_chromosome_pairing_output(self, chromosome1, chromosome2) -> list:
