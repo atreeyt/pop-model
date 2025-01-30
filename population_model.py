@@ -56,7 +56,7 @@ class PopulationModel:
         overground population. Rate should be a value [0-1] where 1
         means all of the seeds are transferred.
         """
-
+        logger.info("Germinating seeds...")
         # TODO ? Add stochastic rate.
         if rate < 0 or rate == 0 or rate > 1:
             logger.warning(f"germinate_seeds has a unexpected rate: {rate}")
@@ -70,11 +70,12 @@ class PopulationModel:
         # self.seed_pop_overground.update_counts(
         #     seeds_dict, replace=False, remove_others=False
         # )
-        logging.error(seeds_dict)
+
         for chromosome, count in seeds_dict.items():
             self.add_seeds(chromosome, count, location="overground")
         for chromosome, count in seeds_dict.items():
             self.remove_seeds(chromosome, count, location="underground")
+        logger.info(f"Germinated seeds at rate {rate}.")
         return
 
     def return_seeds_to_seedbank(self, rate=1.0) -> None:
@@ -91,16 +92,20 @@ class PopulationModel:
         seeds_dict = {key: pop_dict[key] * rate for key in pop_dict.keys()}
 
         # Underground.
-        self.seed_pop_underground.update_counts(
-            seeds_dict, replace=False, remove_others=False
-        )
+        for chromosome, count in seeds_dict.items():
+            self.seed_pop_underground.add_seeds(chromosome, count)
+        # self.seed_pop_underground.update_counts(
+        #     seeds_dict, replace=False, remove_others=False
+        # )
 
         # Overground. Negate values in dictionary.
         for chromosome, count in seeds_dict.items():
-            seeds_dict[chromosome] = -count
-        self.seed_pop_overground.update_counts(
-            seeds_dict, replace=False, remove_others=False
-        )
+            self.seed_pop_overground.remove_seeds(chromosome, count)
+            # seeds_dict[chromosome] = -count
+        # self.seed_pop_overground.update_counts(
+        #     seeds_dict, replace=False, remove_others=False
+        # )
+        logger.info(f"Returned seeds to seedbank at rate {rate}.")
         return
 
     def add_seeds(self, chromosome, count, location) -> None:
@@ -110,41 +115,33 @@ class PopulationModel:
         logger.info(f"add_seeds: {chromosome} {count} to {location}")
 
         count_dict = {chromosome: count}
-        seed_pop.update_counts(count_dict, replace=False, remove_others=False)
+        # seed_pop.update_counts(count_dict, replace=False, remove_others=False)
+        seed_pop.add_seeds(chromosome, count)
         return
 
     def remove_seeds(self, chromosome, count, location) -> None:
         """Removes the given number of seeds from the population."""
 
-        seed_pop = self._get_population_object(location)
-        population = seed_pop.get_population(key=chromosome)[chromosome]
-
         # Case for removing all seeds of a type from the population.
         if count == -1:
             count = population
-        if count > population:
-            logger.warning(
-                "Attempted to remove more seeds than currently in the"
-                f" {location} population: {chromosome}, current: {population}, to"
-                f" remove: {count}. Removed whole population."
-            )
-            count = population
-
-        # Add a negative value (remove).
-        self.add_seeds(chromosome, -count, location)
-        return
-
-    def replace_seeds(self, count_dict, remove_others, location) -> None:
-        """Updates the seed population object with the new seed counts.
-
-        The seed population object has other seed values REMOVED and the
-        new ones entered in its place, when remove_others=True.
-        """
 
         seed_pop = self._get_population_object(location)
-        logger.info(f"replace_seeds: {count_dict} in {location}")
-        seed_pop.update_counts(count_dict, remove_others=remove_others)
+        population = seed_pop.get_population(key=chromosome)[chromosome]
+        seed_pop.remove_seeds(chromosome, count)
         return
+
+    # def replace_seeds(self, count_dict, remove_others, location) -> None:
+    #     """Updates the seed population object with the new seed counts.
+
+    #     When remove_others=True, the seed population object has other
+    #     seed values REMOVED and the new ones entered in its place,
+    #     """
+
+    #     seed_pop = self._get_population_object(location)
+    #     logger.info(f"replace_seeds: {count_dict} in {location}")
+    #     seed_pop.update_counts(count_dict, remove_others=remove_others)
+    #     return
 
     def _get_population_object(self, location):
         assert location in [
@@ -207,11 +204,11 @@ class PopulationModel:
 
         Calculates the offspring for each chromosome pairing.
         """
-
+        seed_pop = self._get_population_object(location="overground")
         logger.debug("Calculating population change...")
-        new_counts = self.seed_pop_underground.get_blank_count_dict()
+        new_counts = seed_pop.get_blank_count_dict()
         # Calculate frequency of each seed type within the parent population.
-        frequencies = self.seed_pop_underground.get_frequency()
+        frequencies = seed_pop.get_frequency()
 
         # Calculate the proportions of new seeds for each gene combination.
         for chromosome1, frequency1 in frequencies.items():
@@ -221,14 +218,14 @@ class PopulationModel:
                 # Division by 0.25 as there is there are four options
                 # for the children (e.g. RR, Rr, rR, and rr).
                 new_seed = (
-                    sum(self.seed_pop_underground.get_population().values())
+                    sum(seed_pop.get_population().values())
                     * frequency1
                     * frequency2
                     * 0.25
                 )
 
                 logger.debug(
-                    f"{sum(self.seed_pop_underground.get_population().values())}"
+                    f"{sum(seed_pop.get_population().values())}"
                     f" * {frequency1:.3f} * {frequency2:.3f} * 0.25"
                     f" = {new_seed} seeds/child"
                 )
@@ -236,7 +233,9 @@ class PopulationModel:
                     new_counts[child] += new_seed
 
         logger.info(f"Calculated population change.")
-        self.replace_seeds(new_counts, remove_others=False, location="underground")
+        # self.replace_seeds(new_counts, remove_others=False, location="underground")
+        for chromosome, count in new_counts.items():
+            seed_pop.add_seeds(chromosome, count)
         return new_counts
 
     def get_population(self, location) -> dict:
