@@ -1,9 +1,9 @@
 import logging
+from copy import deepcopy
+
+import numpy as np
 
 import population_model
-import utils
-import numpy as np
-from copy import deepcopy
 
 logger = logging.getLogger(__name__)
 

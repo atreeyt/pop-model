@@ -3,9 +3,9 @@ import logging
 import os
 from copy import deepcopy
 
+import observer_model
 import population_model
 import utils
-import observer_model
 
 
 def parse_arguments() -> argparse.ArgumentParser:

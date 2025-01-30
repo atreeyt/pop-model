@@ -1,7 +1,6 @@
 import logging
 
 import seed_population
-import utils
 
 logger = logging.getLogger(__name__)
 
