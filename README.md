@@ -12,7 +12,7 @@ TODO
 Only Python is required to run the project (version >3.7).
 
 # Running the project
-- Entry point to the project is `pop_model.py`.
+- Entry point to the project is `pop_main.py`.
 - Use `population_model.PopulationModel()` to define the chromosomes in the population.
     - There is an underground and an overground population.
     - The underground population germinates and becomes the overground population.
@@ -25,7 +25,7 @@ Only Python is required to run the project (version >3.7).
 
 In order to run the default settings for four time steps, use the terminal to run:
 ```
-python3 pop_model -t 4
+python3 pop_main.py -t 4
 ```
 The verbosity flag `-v` can be added to show additional information. `-vv` shows even more debugging information.
 See `--help` for all command line arguments.
