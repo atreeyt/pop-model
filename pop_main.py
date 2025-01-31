@@ -202,7 +202,7 @@ def print_population_stats(
     print("    Frequency:")
     pretty_print_dict(utils.round_dict_values(frequency, n=n_digits), indent=8)
     print(
-        "Frequency of resistant seeds:"
+        "        Frequency of resistant seeds:"
         f" {get_resistant_seed_freq_from_freq(frequency):.3f}"
     )
     return
@@ -230,13 +230,13 @@ def events(
         # When 2t per year, all odd t are midyear.
         case t if not utils.is_even(t):
             pop_model.return_seeds_to_seedbank(rate=1.0)
-            pop_model.germinate_seeds(rate=0.5)
+            pop_model.germinate_seeds(rate=0.7)
 
         # When 2t per year, all even t are end of year.
         case t if utils.is_even(t):
             # An effective herbicide but only targeting susceptible individuals.
             pop_model.purge_population(0.8, ["rr"], location="overground")
-            pop_model
+
         # Herbicide with less efficacy but different mode of action, all seeds susceptible.
         # pop_model.purge_population(
         #     0.4, ["rr", "rR", "Rr", "RR"], location="overground"
@@ -253,9 +253,8 @@ def main(max_time=1) -> None:
 
     # Compute for number of time steps t.
     for t in range(0, max_time + 1):
-        print(
-            f"\n\n--- Time {t}, year {calculate_year_from_t(t,TIME_STEPS_PER_YEAR)} ---"
-        )
+        year = calculate_year_from_t(t, TIME_STEPS_PER_YEAR)
+        print(f"\n\n--- Year {year}, timestep {t} ---")
         if t == 0:
             pop_model = population_model.PopulationModel()
         else:
@@ -266,7 +265,7 @@ def main(max_time=1) -> None:
         pop_model = events(pop_model, t)
 
         # Model population changes after the start.
-        if t > 0:
+        if (t > 0) and (t % TIME_STEPS_PER_YEAR == 0):
             results = pop_model.apply_population_change()
 
         # Showing results.
@@ -277,10 +276,10 @@ def main(max_time=1) -> None:
 
     # Print lists of population and resistance history for graphs.
     # TODO matplotlib
-    print("\npopulation history:")
-    print(get_population_history(iteration_history, location="overground"))
-    print("\nfrequency history:")
-    print(get_resistance_history(iteration_history, location="overground"))
+    # print("\npopulation history:")
+    # print(get_population_history(iteration_history, location="overground"))
+    # print("\nfrequency history:")
+    # print(get_resistance_history(iteration_history, location="overground"))
 
     # print("\n\n NOISY OBSERVER\n----------------")
     # observer = observer_model.ObserverModel(
