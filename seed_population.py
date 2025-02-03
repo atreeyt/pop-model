@@ -43,7 +43,7 @@ class SeedPopulation:
         total_seeds = sum(self.seed_counts.values())
         # Guard against division by 0.
         if total_seeds == 0:
-            logger.warning("get_frequency: seed_count is empty, returning zeroes.")
+            logger.debug("get_frequency: seed_count is empty, returning zeroes.")
             return dict.fromkeys(self.seed_counts.keys(), 0.0)
 
         freq = {}
