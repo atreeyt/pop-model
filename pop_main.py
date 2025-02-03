@@ -4,6 +4,10 @@ import os
 from copy import deepcopy
 from math import ceil
 
+import matplotlib.dates as mdates
+import matplotlib.pyplot as plt
+import pandas as pd
+
 import observer_model
 import population_model
 import utils
@@ -177,9 +181,52 @@ def get_resistance_history(
     return resistance_history
 
 
-def calculate_year_from_t(t, time_steps_per_year) -> int:
+def get_year(t, time_steps_per_year) -> int:
     # math.ceil
     return ceil(t / time_steps_per_year)
+
+
+def get_month(t, time_steps_per_year) -> int:
+    """Get the 'month' of the year. Returns int.
+
+    The 'month' has a max of time_steps_per_year. If this value is 4
+    then the 'months' in the year are 1,2,3,4 and actually correlate to
+    three real months each.
+    """
+
+    if t == 0:
+        return 1
+    month = t % time_steps_per_year
+    return time_steps_per_year if month == 0 else month
+
+
+def get_month_name(month_num) -> str:
+    match month_num:
+        case 1:
+            month = "January"
+        case 2:
+            month = "February"
+        case 3:
+            month = "March"
+        case 4:
+            month = "April"
+        case 5:
+            month = "May"
+        case 6:
+            month = "June"
+        case 7:
+            month = "July"
+        case 8:
+            month = "August"
+        case 9:
+            month = "September"
+        case 10:
+            month = "October"
+        case 11:
+            month = "November"
+        case 12:
+            month = "December"
+    return month
 
 
 def pretty_print_dict(dictionary, indent=0, use_tabs=False) -> None:
@@ -203,14 +250,74 @@ def print_population_stats(
     pretty_print_dict(utils.round_dict_values(frequency, n=n_digits), indent=8)
     print(
         "        Frequency of resistant seeds:"
-        f" {get_resistant_seed_freq_from_freq(frequency):.3f}"
+        f" {get_resistant_seed_freq_from_freq(frequency)}"
     )
     return
 
 
+def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> None:
+    fig, ax1 = plt.subplots()
+
+    x = pd.date_range(
+        start="12/2024", periods=MAX_TIME * TIME_STEPS_PER_YEAR + 1, freq="ME"
+    )
+    vlines = pd.date_range(start="12/2024", periods=MAX_TIME + 1, freq="YE")
+    y1 = get_population_history(iteration_history, location="overground")
+    y2 = get_population_history(iteration_history, location="underground")
+    ax1.plot(x, y1, label="overground", color="mediumseagreen")
+    ax1.plot(x, y2, label="underground", color="brown", linewidth=1.0, alpha=1.0)
+    ax1.set_xlabel("year")
+    # ax1.xaxis.grid(True, which="minor")
+    # plt.grid(True)
+    # ax1.xaxis.grid(True, which="minor")
+    # ax1.locator_params(axis="x", nbins=20 + 1)
+    ax1.set_ylabel("population (-)")
+    ax1.set_ylim(bottom=0)
+    # ax1.set_ylim(top=200_000)
+    # ax1.tick_params("y", colors="b")
+
+    ax1.xaxis.set_major_locator(mdates.YearLocator())  # Major ticks every year
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Show only the year
+
+    # # Add grid lines every January 1st
+    # ax1.xaxis.set_minor_locator(
+    #     mdates.MonthLocator(bymonth=1)
+    # )  # Minor ticks at every January
+    # ax1.grid(
+    #     True, which="minor", linestyle="--", linewidth=0.8, alpha=0.6
+    # )  # Apply grid lines
+
+    ax2 = ax1.twinx()
+    y3 = get_resistance_history(iteration_history, location="overground")
+    y4 = get_resistance_history(iteration_history, location="underground")
+    ax2.plot(x, y3, "g:")
+    ax2.plot(x, y4, "r:")
+    ax2.set_ylabel("resistance rate (...)")
+    ax2.set_ylim([0, 1])
+    # ax1.grid(True, which="minor")
+    # ax2.tick_params("y", colors="r")
+
+    # # Add grid lines every January 1st
+    # ax2.xaxis.set_minor_locator(
+    #     mdates.MonthLocator(bymonth=1)
+    # )  # Minor ticks at every January
+    # ax2.grid(
+    #     True, which="minor", linestyle="--", linewidth=0.8, alpha=0.6
+    # )  # Apply grid lines
+
+    # fig.tight_layout()
+    ax1.legend()
+    # ax2.legend()
+
+    ax2.vlines(vlines, 0, 1, color="grey", linewidth=0.4, alpha=0.8)
+
+    plt.show()
+    return
+
+
 def events(
-    pop_model: population_model.PopulationModel, t: int
-) -> population_model.PopulationModel:
+    pop_model: population_model.PopulationModel, t: int, TIME_STEPS_PER_YEAR: int
+):  # -> tuple[population_model.PopulationModel, bool]:
     """Define events that occur at time t. Returns modified population model.
 
     At times t, certain events can happen to a population, such as
@@ -219,63 +326,129 @@ def events(
 
     year = math.ceil(t/(t per year))
     """
-    # TODO add TIME_STEPS_PER_YEAR
-    #   Calculate when to germinate, purge, and return seeds based on
-    #   this value.
-    match t:
-        case 0:
-            pop_model.add_seeds("rr", 100, location="underground")
-            pop_model.add_seeds("Rr", 1, location="underground")
+    # TODO fix docstring, e.g. return type
+    change_occurred = False
+    year = get_year(t, TIME_STEPS_PER_YEAR)
+    month = get_month(t, TIME_STEPS_PER_YEAR)
 
-        # When 2t per year, all odd t are midyear.
-        case t if not utils.is_even(t):
-            pop_model.return_seeds_to_seedbank(rate=1.0)
+    if t == 0:
+        pop_model.add_seeds("rr", 1_000, location="underground")
+        pop_model.add_seeds("Rr", 1, location="underground")
+        change_occurred = True
+        return pop_model, change_occurred
+
+    # if year == 1 and month == 1:
+    # Do some event only needed for this month.
+    # return
+
+    match month:
+        case 1:
             pop_model.germinate_seeds(rate=0.7)
-
-        # When 2t per year, all even t are end of year.
-        case t if utils.is_even(t):
+            change_occurred = True
+        case 2:
+            pass
+        case 3:
             # An effective herbicide but only targeting susceptible individuals.
             pop_model.purge_population(0.8, ["rr"], location="overground")
+            change_occurred = True
+        case 4:
+            pass
+        case 5:
+            pass
+        case 6:
+            pass
+        case 7:
+            pop_model.apply_population_change()
+            change_occurred = True
+        case 8:
+            pass
+        case 9:
+            pass
+        case 10:
+            pop_model.return_seeds_to_seedbank(rate=1.0)
+            change_occurred = True
+        case 11:
+            pass
+        case 12:
+            pass
 
         # Herbicide with less efficacy but different mode of action, all seeds susceptible.
         # pop_model.purge_population(
         #     0.4, ["rr", "rR", "Rr", "RR"], location="overground"
         # )
-    return pop_model
+    return pop_model, change_occurred
 
 
-def main(max_time=1) -> None:
-    # List to store each iteration. Python passes the variable around as a
-    # reference, so the object stored in the list will be modified after it
-    # has been added.
-    TIME_STEPS_PER_YEAR = 2
+def main(MAX_TIME=1) -> None:
+    TIME_STEPS_PER_YEAR = 12  # If this value is changed, events() must be changed too.
     iteration_history: list[population_model.PopulationModel] = []
 
-    # Compute for number of time steps t.
-    for t in range(0, max_time + 1):
-        year = calculate_year_from_t(t, TIME_STEPS_PER_YEAR)
-        print(f"\n\n--- Year {year}, timestep {t} ---")
+    # Compute for t amount of years.
+    for t in range(0, MAX_TIME * TIME_STEPS_PER_YEAR + 1):
+        logging.debug(f"timestep={t}")
+        year = get_year(t, TIME_STEPS_PER_YEAR)
+        month = get_month_name(get_month(t, TIME_STEPS_PER_YEAR))
+        print(f"\n\n--- Year {year}, {month} ---")
         if t == 0:
             pop_model = population_model.PopulationModel()
         else:
             pop_model = deepcopy(iteration_history[t - 1])
         iteration_history.append(pop_model)
 
-        # Modify population model with any 'events' such as adding seeds.
-        pop_model = events(pop_model, t)
+        # This space here is 'start of year', before events.
 
+        # Modify population model with any 'events' such as adding seeds.
+        pop_model, change_occurred = events(pop_model, t, TIME_STEPS_PER_YEAR)
+
+        # This space here is 'end of year', after events.
         # Model population changes after the start.
-        if (t > 0) and (t % TIME_STEPS_PER_YEAR == 0):
-            results = pop_model.apply_population_change()
+        # if (t > 0) and (t % TIME_STEPS_PER_YEAR == 0):
+        #     results = pop_model.apply_population_change()
 
         # Showing results.
-        print("  --OVERGROUND--")
-        print_population_stats(pop_model, "overground")
-        print("  --UNDERGROUND--")
-        print_population_stats(pop_model, "underground")
+        if change_occurred:
+            print("  --OVERGROUND--")
+            print_population_stats(pop_model, "overground")
+            print("  --UNDERGROUND--")
+            print_population_stats(pop_model, "underground")
+        else:
+            print("...")
 
     # Print lists of population and resistance history for graphs.
+    show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
+
     # TODO matplotlib
+    # fig, ax = plt.subplots()
+
+    # x = pd.date_range(
+    #     start="12/2024", periods=MAX_TIME * TIME_STEPS_PER_YEAR + 1, freq="ME"
+    # )
+    # print(x)
+    # y1 = get_population_history(iteration_history, location="overground")
+    # # print(y1)
+    # y2 = get_population_history(iteration_history, location="underground")
+    # ax.plot(x, y1, label="overground", color="mediumseagreen")
+    # ax.plot(x, y2, label="underground", color="brown")
+
+    # months = mdates.MonthLocator(interval=1, bymonthday=-1)
+    # months_fmt = mdates.DateFormatter("%Y-%m")
+    # ax.xaxis.set_major_locator(months)
+    # ax.xaxis.set_major_formatter(months_fmt)
+    # ax.tick_params(axis="x", labelrotation=40)
+
+    # ax.legend()
+    # ax.set_xlabel("Year")
+    # ax.set_ylabel("Population")
+    # fig.suptitle("Population values")
+    # plt.show()
+
+    #
+    #
+    #
+    #
+    #
+    #
+
     # print("\npopulation history:")
     # print(get_population_history(iteration_history, location="overground"))
     # print("\nfrequency history:")
