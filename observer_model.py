@@ -12,11 +12,6 @@ logger = logging.getLogger(__name__)
 class ObserverModel:
 
     def __init__(self, observation_accuracy, noise_standard_dev=5):
-        if not (0 <= observation_accuracy <= 1):
-            logger.error(
-                "Observer model accuracy may be set incorrectly:",
-                observation_accuracy,
-            )
         self.observation_accuracy = observation_accuracy
         self.observation_noise_standard_dev = noise_standard_dev
         logger.info(
@@ -39,32 +34,37 @@ class ObserverModel:
         By specificying an accuracy, the class variable observation_accuracy
         can be overrided.
         """
-        if accuracy and not (0 <= accuracy <= 1):
+
+        # TODO when observing, the observer's FP rate will change the
+        # accuracy of observations. Some observations will be
+        # incorrectly classified as another species. The population of
+        # these species matters HIGHLY. A 1% FP rate will mean that with
+        # a population of 1000, 10 species will be incorrectly
+        # classified as another species.
+        if accuracy == None:
+            accuracy = self.observation_accuracy
+
+        if not (0 <= accuracy <= 1):
             logger.error(
                 "Observe accuracy may be set incorrectly:",
                 accuracy,
             )
 
-        if accuracy == None:
-            accuracy = self.observation_accuracy
-
         if noisy:
             accuracy = self.get_noisy_accuracy(
                 accuracy, self.observation_noise_standard_dev
             )
-        population = deepcopy(pop_model.get_population(location="overground"))
-        for key, val in population.items():
-            # Accuracy is returned as a list, but only has one value.
-            population[key] = val * accuracy[0]
 
-        return population
+        count = 0
+        POPULATION = pop_model.get_population(location="overground")
+        for key, val in POPULATION.items():
+            # Accuracy is returned as a list, but only has one value.
+            count += val * accuracy[0]
+
+        return count
 
     def get_noisy_accuracy(
-        self,
-        accuracy,
-        noise_standard_dev,
-        amount_to_return=1,
-        dp_to_round_results=2,
+        self, accuracy, noise_standard_dev, amount_to_return=1
     ) -> list[float]:
         """TODO
 
@@ -75,5 +75,5 @@ class ObserverModel:
         # Numpy returns an array of Numpy float types, so we convert here to
         # a regular list with regular floats. Round if required.
         noise_list = list(map(float, noise))
-        noise_list = [round(x, dp_to_round_results) for x in noise_list]
+        noise_list = [x for x in noise_list]
         return noise_list
