@@ -2,9 +2,9 @@ import argparse
 import logging
 import os
 from copy import deepcopy
+from enum import Enum
 from math import ceil
 
-from enum import Enum
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -434,13 +434,18 @@ def events(
 def main(MAX_TIME=1) -> None:
     TIME_STEPS_PER_YEAR = 12  # If this value is changed, events() must be changed too.
     iteration_history: list[population_model.PopulationModel] = []
+    observation_history: list[float] = []
+
+    observer = observer_model.ObserverModel(
+        observation_accuracy=0.9, noise_standard_dev=0.05
+    )
 
     # Compute for t amount of years.
     for t in range(0, MAX_TIME * TIME_STEPS_PER_YEAR + 1):
         logging.debug(f"timestep={t}")
         year = get_year(t, TIME_STEPS_PER_YEAR)
-        month = get_month_name(get_month(t, TIME_STEPS_PER_YEAR))
-        print(f"\n\n--- Year {year}, {month} ---")
+        month = get_month(t, TIME_STEPS_PER_YEAR)
+        print(f"\n\n--- Year {year}, {get_month_name(month)} ---")
         if t == 0:
             pop_model = population_model.PopulationModel()
         else:
@@ -467,69 +472,12 @@ def main(MAX_TIME=1) -> None:
             print("...")
 
         if month == Month.MAR.value or month == Month.OCT.value:
-            pass
+            observation = observer.observe(pop_model)
+            print(f"\tObservation:", observation)
+            observation_history.append(observation)
 
     # Print lists of population and resistance history for graphs.
-    show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
-
-    # TODO matplotlib
-    # fig, ax = plt.subplots()
-
-    # x = pd.date_range(
-    #     start="12/2024", periods=MAX_TIME * TIME_STEPS_PER_YEAR + 1, freq="ME"
-    # )
-    # print(x)
-    # y1 = get_population_history(iteration_history, location="overground")
-    # # print(y1)
-    # y2 = get_population_history(iteration_history, location="underground")
-    # ax.plot(x, y1, label="overground", color="mediumseagreen")
-    # ax.plot(x, y2, label="underground", color="brown")
-
-    # months = mdates.MonthLocator(interval=1, bymonthday=-1)
-    # months_fmt = mdates.DateFormatter("%Y-%m")
-    # ax.xaxis.set_major_locator(months)
-    # ax.xaxis.set_major_formatter(months_fmt)
-    # ax.tick_params(axis="x", labelrotation=40)
-
-    # ax.legend()
-    # ax.set_xlabel("Year")
-    # ax.set_ylabel("Population")
-    # fig.suptitle("Population values")
-    # plt.show()
-
-    #
-    #
-    #
-    #
-    #
-    #
-
-    # print("\npopulation history:")
-    # print(get_population_history(iteration_history, location="overground"))
-    # print("\nfrequency history:")
-    # print(get_resistance_history(iteration_history, location="overground"))
-
-    # print("\n\n NOISY OBSERVER\n----------------")
-    # observer = observer_model.ObserverModel(
-    #     observation_accuracy=0.9, noise_standard_dev=0.05
-    # )
-    # for t, model in enumerate(iteration_history):
-    #     print(f"\n\n--- Time {t} ---")
-    #     # print("model.get_population():", model.get_population())
-    #     population = observer.observe(model, noisy=True)
-    #     print(f"  pop:")
-    #     pretty_print_dict(utils.round_dict_values(population), indent=4)
-    #     print("    TOTAL :", round(sum(population.values()), 2))
-    #     #     ,
-    #     #     f" total: {round(sum(population.values()),2):_}",
-    #     # )
-    #     population = model.get_population(location="overground")
-    #     print("actual population:")
-    #     print(
-    #         f"  pop:",
-    #         utils.round_dict_values(population),
-    #         f" total: {round(sum(population.values()),2):_}",
-    #     )
+    # show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
 
     return
 
