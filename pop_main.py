@@ -261,31 +261,17 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
     x = pd.date_range(
         start="12/2024", periods=MAX_TIME * TIME_STEPS_PER_YEAR + 1, freq="ME"
     )
-    vlines = pd.date_range(start="12/2024", periods=MAX_TIME + 1, freq="YE")
+
     y1 = get_population_history(iteration_history, location="overground")
     y2 = get_population_history(iteration_history, location="underground")
     ax1.plot(x, y1, label="overground", color="mediumseagreen")
     ax1.plot(x, y2, label="underground", color="brown", linewidth=1.0, alpha=1.0)
     ax1.set_xlabel("year")
-    # ax1.xaxis.grid(True, which="minor")
-    # plt.grid(True)
-    # ax1.xaxis.grid(True, which="minor")
-    # ax1.locator_params(axis="x", nbins=20 + 1)
     ax1.set_ylabel("population (-)")
     ax1.set_ylim(bottom=0)
-    # ax1.set_ylim(top=200_000)
-    # ax1.tick_params("y", colors="b")
 
     ax1.xaxis.set_major_locator(mdates.YearLocator())  # Major ticks every year
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Show only the year
-
-    # # Add grid lines every January 1st
-    # ax1.xaxis.set_minor_locator(
-    #     mdates.MonthLocator(bymonth=1)
-    # )  # Minor ticks at every January
-    # ax1.grid(
-    #     True, which="minor", linestyle="--", linewidth=0.8, alpha=0.6
-    # )  # Apply grid lines
 
     ax2 = ax1.twinx()
     y3 = get_resistance_history(iteration_history, location="overground")
@@ -294,23 +280,73 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
     ax2.plot(x, y4, "r:")
     ax2.set_ylabel("resistance rate (...)")
     ax2.set_ylim([0, 1])
-    # ax1.grid(True, which="minor")
-    # ax2.tick_params("y", colors="r")
 
-    # # Add grid lines every January 1st
-    # ax2.xaxis.set_minor_locator(
-    #     mdates.MonthLocator(bymonth=1)
-    # )  # Minor ticks at every January
-    # ax2.grid(
-    #     True, which="minor", linestyle="--", linewidth=0.8, alpha=0.6
-    # )  # Apply grid lines
-
-    # fig.tight_layout()
     ax1.legend()
     # ax2.legend()
-
+    vlines = pd.date_range(start="12/2024", periods=MAX_TIME + 1, freq="YE")
     ax2.vlines(vlines, 0, 1, color="grey", linewidth=0.4, alpha=0.8)
 
+    # Extra vlines for displaying events within the first year (for visual clarity).
+    vlines = pd.date_range(start="02/2025", periods=1, freq="D")
+    ax2.vlines(
+        vlines,
+        0,
+        1,
+        color="red",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label="germination",
+    )
+
+    vlines = pd.date_range(start="06/2025", periods=1, freq="D")
+    ax2.vlines(
+        vlines,
+        0,
+        1,
+        color="blue",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label="crossing",
+    )
+
+    vlines = pd.date_range(start="08/2025", periods=1, freq="D")
+    ax2.vlines(
+        vlines,
+        0,
+        1,
+        color="green",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label="seeds return",
+    )
+
+    vlines = pd.date_range(start="10/2025", periods=1, freq="D")
+    ax2.vlines(
+        vlines,
+        0,
+        1,
+        color="purple",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label="germination",
+    )
+
+    vlines = pd.date_range(start="11/2025", periods=1, freq="D")
+    ax2.vlines(
+        vlines,
+        0,
+        1,
+        color="orange",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label="herbicide applied",
+    )
+    ax2.legend(loc="upper center")
     plt.show()
     return
 
@@ -318,13 +354,12 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
 def events(
     pop_model: population_model.PopulationModel, t: int, TIME_STEPS_PER_YEAR: int
 ):  # -> tuple[population_model.PopulationModel, bool]:
-    """Define events that occur at time t. Returns modified population model.
+    """Define events that occur at time t. Returns modified tuple[population model, bool].
 
     At times t, certain events can happen to a population, such as
     culling a susceptible population. These changes occur here and the
     resultant population model is returned.
-
-    year = math.ceil(t/(t per year))
+    bool returned is if the population model was modified/changed at all.
     """
     # TODO fix docstring, e.g. return type
     change_occurred = False
@@ -343,32 +378,33 @@ def events(
 
     match month:
         case 1:
+            pass
+        case 2:
             pop_model.germinate_seeds(rate=0.7)
             change_occurred = True
-        case 2:
-            pass
         case 3:
-            # An effective herbicide but only targeting susceptible individuals.
-            pop_model.purge_population(0.8, ["rr"], location="overground")
-            change_occurred = True
+            pass
         case 4:
             pass
         case 5:
             pass
         case 6:
-            pass
-        case 7:
             pop_model.apply_population_change()
             change_occurred = True
-        case 8:
+        case 7:
             pass
+        case 8:
+            pop_model.return_seeds_to_seedbank(rate=1.0)
+            change_occurred = True
         case 9:
             pass
         case 10:
-            pop_model.return_seeds_to_seedbank(rate=1.0)
+            pop_model.germinate_seeds(rate=0.7)
             change_occurred = True
         case 11:
-            pass
+            # An effective herbicide but only targeting susceptible individuals.
+            pop_model.purge_population(0.8, ["rr"], location="overground")
+            change_occurred = True
         case 12:
             pass
 
