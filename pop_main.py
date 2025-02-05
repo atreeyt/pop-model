@@ -4,6 +4,7 @@ import os
 from copy import deepcopy
 from math import ceil
 
+from enum import Enum
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -115,6 +116,21 @@ def config(
             datefmt="%Y-%m-%d %H:%M:%S",
         )
     return
+
+
+class Month(Enum):
+    JAN = 1
+    FEB = 2
+    MAR = 3
+    APR = 4
+    MAY = 5
+    JUN = 6
+    JUL = 7
+    AUG = 8
+    SEP = 9
+    OCT = 10
+    NOV = 11
+    DEC = 12
 
 
 def get_resistant_seed_freq_from_pop(seed_dictionary, susceptible_list=["rr"]) -> float:
@@ -377,35 +393,35 @@ def events(
     # return
 
     match month:
-        case 1:
+        case Month.JAN.value:
             pass
-        case 2:
+        case Month.FEB.value:
             pop_model.germinate_seeds(rate=0.7)
             change_occurred = True
-        case 3:
+        case Month.MAR.value:
             pass
-        case 4:
+        case Month.APR.value:
             pass
-        case 5:
+        case Month.MAY.value:
             pass
-        case 6:
+        case Month.JUN.value:
             pop_model.apply_population_change()
             change_occurred = True
-        case 7:
+        case Month.JUL.value:
             pass
-        case 8:
+        case Month.AUG.value:
             pop_model.return_seeds_to_seedbank(rate=1.0)
             change_occurred = True
-        case 9:
+        case Month.SEP.value:
             pass
-        case 10:
+        case Month.OCT.value:
             pop_model.germinate_seeds(rate=0.7)
             change_occurred = True
-        case 11:
+        case Month.NOV.value:
             # An effective herbicide but only targeting susceptible individuals.
             pop_model.purge_population(0.8, ["rr"], location="overground")
             change_occurred = True
-        case 12:
+        case Month.DEC.value:
             pass
 
         # Herbicide with less efficacy but different mode of action, all seeds susceptible.
@@ -449,6 +465,9 @@ def main(MAX_TIME=1) -> None:
             print_population_stats(pop_model, "underground")
         else:
             print("...")
+
+        if month == Month.MAR.value or month == Month.OCT.value:
+            pass
 
     # Print lists of population and resistance history for graphs.
     show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
