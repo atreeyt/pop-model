@@ -216,6 +216,8 @@ class PopulationModel:
                 for child in children:
                     new_counts[child] += new_seed
 
+        # The new seeds get deposited into the underground population.
+        seed_pop = self._get_population_object(location="underground")
         for chromosome, count in new_counts.items():
             seed_pop.add_seeds(chromosome, count)
         logger.info(f"Calculated population change.")
