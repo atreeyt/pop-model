@@ -46,7 +46,7 @@ class ObserverModel:
 
         if not (0 <= accuracy <= 1):
             logger.error(
-                "Observe accuracy may be set incorrectly:",
+                "Observation accuracy may be set incorrectly:",
                 accuracy,
             )
 
