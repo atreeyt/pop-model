@@ -14,7 +14,7 @@ import population_model
 import utils
 
 
-def parse_arguments() -> argparse.ArgumentParser:
+def parse_arguments():
     """Parses command line arguments."""
     parser = argparse.ArgumentParser(description="")
     parser.add_argument("-t", help="max number of timesteps", dest="maxtime", type=int)
@@ -176,7 +176,7 @@ def get_population_history(
     assert location in [
         "underground",
         "overground",
-    ], f"location must be ['underground','overground']"
+    ], "location must be ['underground','overground']"
 
     return [
         sum(t.get_population(location=location).values()) for t in iteration_history
@@ -242,6 +242,9 @@ def get_month_name(month_num) -> str:
             month = "November"
         case 12:
             month = "December"
+        case _:
+            month = "January"
+            logging.error(f"Month {month} is out of bounds. Returning 'January'.")
     return month
 
 
@@ -295,7 +298,7 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
     ax2.plot(x, y3, "g:")
     ax2.plot(x, y4, "r:")
     ax2.set_ylabel("resistance rate (...)")
-    ax2.set_ylim([0, 1])
+    ax2.set_ylim((0.0, 1.0))
 
     ax1.legend()
     # ax2.legend()
@@ -485,7 +488,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
             observation = observer.observe(pop_model, noisy=True)
             observation_history.append(observation)
             if verbose:
-                print(f"\tObservation:", observation)
+                print("\tObservation:", observation)
 
     # Show graph for observations vs time.
     # Remove first observation in March as no previous observation in
@@ -493,7 +496,6 @@ def main(MAX_TIME=1, verbose=False) -> None:
     observation_history = observation_history[1:]
     print("observation_history=", [round(i, 2) for i in observation_history])
 
-    expected_herbicide_efficacy = 0
     initial_pop = 0
     survivor_pop = 0
     survival_rate = 0
@@ -514,7 +516,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
     percent_changes = [
         round(i * 100, 4) for i in calculate_percent_change(survival_rates)
     ]
-    print(f"percent change=", percent_changes)
+    print("percent change=", percent_changes)
 
     plt.plot(
         range(1, len(percent_changes) + 1, 1),
@@ -548,7 +550,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
 
 
 if __name__ == "__main__":
-    args: argparse.ArgumentParser = parse_arguments()
+    args = parse_arguments()
     config(
         use_logger=args.use_logger,
         log_name=args.log_name,

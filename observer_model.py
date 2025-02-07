@@ -1,5 +1,4 @@
 import logging
-from copy import deepcopy
 
 import numpy as np
 
@@ -11,7 +10,9 @@ logger = logging.getLogger(__name__)
 # TODO add logging
 class ObserverModel:
 
-    def __init__(self, observation_accuracy, noise_standard_dev=5):
+    def __init__(
+        self, observation_accuracy: float = 1.0, noise_standard_dev: float = 5.0
+    ):
         self.observation_accuracy = observation_accuracy
         self.observation_noise_standard_dev = noise_standard_dev
         logger.info(
@@ -45,7 +46,7 @@ class ObserverModel:
         # these species matters HIGHLY. A 1% FP rate will mean that with
         # a population of 1000, 10 species will be incorrectly
         # classified as another species.
-        if accuracy == None:
+        if accuracy is None:
             accuracy = self.observation_accuracy
 
         if not (0 <= accuracy <= 1):
@@ -69,17 +70,12 @@ class ObserverModel:
 
         return count
 
-    def get_noisy_accuracy(
-        self, accuracy, noise_standard_dev  # , amount_to_return=1
-    ) -> list[float]:
+    def get_noisy_accuracy(self, accuracy, noise_standard_dev) -> float:
         """TODO
 
         TODO
         """
         # TODO change from gaussian to a different distribution (idk which)
         noise = np.random.normal(accuracy, noise_standard_dev, 1)
-        # Numpy returns an array of Numpy float types, so we convert here to
-        # a regular list with regular floats. Round if required.
         noise_list = list(map(float, noise))
-        # noise_list = [x for x in noise_list]
         return noise_list[0]
