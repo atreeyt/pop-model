@@ -392,36 +392,36 @@ def events(
     # Do some event only needed for this month.
     # return
 
-    match month:
-        case Month.JAN.value:
+    match Month(month):
+        case Month.JAN:
             pass
-        case Month.FEB.value:
+        case Month.FEB:
             pop_model.germinate_seeds(rate=0.7)
             change_occurred = True
-        case Month.MAR.value:
+        case Month.MAR:
             pass
-        case Month.APR.value:
+        case Month.APR:
             pass
-        case Month.MAY.value:
+        case Month.MAY:
             pass
-        case Month.JUN.value:
+        case Month.JUN:
             pop_model.apply_population_change()
             change_occurred = True
-        case Month.JUL.value:
+        case Month.JUL:
             pass
-        case Month.AUG.value:
+        case Month.AUG:
             pop_model.return_seeds_to_seedbank(rate=1.0)
             change_occurred = True
-        case Month.SEP.value:
+        case Month.SEP:
             pass
-        case Month.OCT.value:
+        case Month.OCT:
             pop_model.germinate_seeds(rate=0.7)
             change_occurred = True
-        case Month.NOV.value:
+        case Month.NOV:
             # An effective herbicide but only targeting susceptible individuals.
             pop_model.purge_population(0.8, ["rr"], location="overground")
             change_occurred = True
-        case Month.DEC.value:
+        case Month.DEC:
             pass
 
         # Herbicide with less efficacy but different mode of action, all seeds susceptible.
@@ -463,18 +463,21 @@ def main(MAX_TIME=1) -> None:
         #     results = pop_model.apply_population_change()
 
         # Showing results.
-        if change_occurred:
-            print("  --OVERGROUND--")
-            print_population_stats(pop_model, "overground")
-            print("  --UNDERGROUND--")
-            print_population_stats(pop_model, "underground")
-        else:
-            print("...")
+        if verbose:
+            if change_occurred:
+                print("  --OVERGROUND--")
+                print_population_stats(pop_model, "overground")
+                print("  --UNDERGROUND--")
+                print_population_stats(pop_model, "underground")
+            else:
+                print("...")
 
-        if month == Month.MAR.value or month == Month.OCT.value:
-            observation = observer.observe(pop_model)
-            print(f"\tObservation:", observation)
+        if Month(month) == Month.MAR or Month(month) == Month.OCT:
+            # TODO store as observation data type with date and count?
+            observation = observer.observe(pop_model, noisy=True)
             observation_history.append(observation)
+            if verbose:
+                print(f"\tObservation:", observation)
 
     # Print lists of population and resistance history for graphs.
     # show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
