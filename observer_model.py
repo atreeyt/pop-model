@@ -29,10 +29,14 @@ class ObserverModel:
         accuracy=None,
         noisy=False,
     ):
-        """TODO
+        """Observe the overground population. Returns count of population.
 
         By specificying an accuracy, the class variable observation_accuracy
         can be overrided.
+
+        noisy : bool : Compute a noisy accuracy or not.
+        self.noise_standard_dev : Class variable controls the
+            variability of this noise.
         """
 
         # TODO when observing, the observer's FP rate will change the
@@ -50,6 +54,8 @@ class ObserverModel:
                 accuracy,
             )
 
+        # TODO ? Should this be in loop below? If yes, accuracy will
+        # be noisy per chromosome. Probably overkill.
         if noisy:
             accuracy = self.get_noisy_accuracy(
                 accuracy, self.observation_noise_standard_dev
@@ -59,21 +65,21 @@ class ObserverModel:
         POPULATION = pop_model.get_population(location="overground")
         for key, val in POPULATION.items():
             # Accuracy is returned as a list, but only has one value.
-            count += val * accuracy[0]
+            count += val * accuracy
 
         return count
 
     def get_noisy_accuracy(
-        self, accuracy, noise_standard_dev, amount_to_return=1
+        self, accuracy, noise_standard_dev  # , amount_to_return=1
     ) -> list[float]:
         """TODO
 
         TODO
         """
         # TODO change from gaussian to a different distribution (idk which)
-        noise = np.random.normal(accuracy, noise_standard_dev, amount_to_return)
+        noise = np.random.normal(accuracy, noise_standard_dev, 1)
         # Numpy returns an array of Numpy float types, so we convert here to
         # a regular list with regular floats. Round if required.
         noise_list = list(map(float, noise))
-        noise_list = [x for x in noise_list]
-        return noise_list
+        # noise_list = [x for x in noise_list]
+        return noise_list[0]
