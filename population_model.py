@@ -164,7 +164,7 @@ class PopulationModel:
                 chromosome_list = seed_pop.get_population().keys()
             for chromosome in chromosome_list:
                 if print_to_console:
-                    print(
+                    logger.info(
                         f"Purging {amount_to_remove*100}% of {chromosome} seeds from"
                         f" {location}."
                     )
@@ -176,7 +176,9 @@ class PopulationModel:
         # Otherwise assume absolute value.
         for chromosome in chromosome_list:
             if print_to_console:
-                print(f"Purging {amount_to_remove} {chromosome} seeds from {location}.")
+                logger.info(
+                    f"Purging {amount_to_remove} {chromosome} seeds from {location}."
+                )
             seed_pop.remove_seeds(chromosome, count)
 
         return
