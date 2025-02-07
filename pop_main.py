@@ -84,13 +84,13 @@ def config(
         case _:
             if verbose == 0:
                 log_level = logging.WARNING  # default
-            elif verbose == 1:
-                log_level = logging.INFO
             elif verbose == 2:
+                log_level = logging.INFO
+            elif verbose == 3:
                 log_level = logging.DEBUG
-            elif verbose > 2:
+            elif verbose > 3:
                 log_level = logging.DEBUG
-                logging.warning("Verbosity set >2 has no effect.")
+                logging.warning("Verbosity set >3 has no effect.")
 
     if use_logger:
         if log_folder is None:
@@ -432,6 +432,7 @@ def events(
 
 
 def main(MAX_TIME=1) -> None:
+def main(MAX_TIME=1, verbose=False) -> None:
     TIME_STEPS_PER_YEAR = 12  # If this value is changed, events() must be changed too.
     iteration_history: list[population_model.PopulationModel] = []
     observation_history: list[float] = []
@@ -494,4 +495,4 @@ if __name__ == "__main__":
         verbose=args.verbose,
     )
     logging.debug("----- BEGIN PROGRAM -----")
-    main(args.maxtime)
+    main(MAX_TIME=args.maxtime, verbose=args.verbose)
