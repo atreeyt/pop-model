@@ -431,14 +431,20 @@ def events(
     return pop_model, change_occurred
 
 
-def main(MAX_TIME=1) -> None:
+def calculate_percent_change(values):
+    return [
+        round((values[i] - values[i - 1]) / values[i - 1], 4)
+        for i in range(1, len(values))
+    ]
+
+
 def main(MAX_TIME=1, verbose=False) -> None:
     TIME_STEPS_PER_YEAR = 12  # If this value is changed, events() must be changed too.
     iteration_history: list[population_model.PopulationModel] = []
     observation_history: list[float] = []
 
     observer = observer_model.ObserverModel(
-        observation_accuracy=0.9, noise_standard_dev=0.05
+        observation_accuracy=1.0, noise_standard_dev=0.05
     )
 
     # Compute for t amount of years.
@@ -446,7 +452,8 @@ def main(MAX_TIME=1, verbose=False) -> None:
         logging.debug(f"timestep={t}")
         year = get_year(t, TIME_STEPS_PER_YEAR)
         month = get_month(t, TIME_STEPS_PER_YEAR)
-        print(f"\n\n--- Year {year}, {get_month_name(month)} ---")
+        if verbose:
+            print(f"\n\n--- Year {year}, {get_month_name(month)} ---")
         if t == 0:
             pop_model = population_model.PopulationModel()
         else:
@@ -480,9 +487,63 @@ def main(MAX_TIME=1, verbose=False) -> None:
             if verbose:
                 print(f"\tObservation:", observation)
 
+    # Show graph for observations vs time.
+    # Remove first observation in March as no previous observation in
+    #   October to compare to.
+    observation_history = observation_history[1:]
+    print("observation_history=", [round(i, 2) for i in observation_history])
+
+    expected_herbicide_efficacy = 0
+    initial_pop = 0
+    survivor_pop = 0
+    survival_rate = 0
+    survival_rates = []
+    for index, val in enumerate(observation_history):
+        # print(f"{index}: {val}")
+        # First observation.
+        if utils.is_even(index):
+            initial_pop = val
+            continue  # Wait until next observation.
+        # Even number is second observation.
+        if not utils.is_even(index):
+            survivor_pop = val
+            survival_rate = survivor_pop / (initial_pop)
+            # print(survival_rate)
+            survival_rates.append(survival_rate)
+
+    percent_changes = [
+        round(i * 100, 4) for i in calculate_percent_change(survival_rates)
+    ]
+    print(f"percent change=", percent_changes)
+
+    plt.plot(
+        range(1, len(percent_changes) + 1, 1),
+        percent_changes,
+        marker="o",
+        linestyle="-",
+        color="b",
+    )
+    plt.xlabel("year")
+    plt.ylabel("percent change")
+    plt.title("")
+    # plt.legend()
+    plt.show()
+
     # Print lists of population and resistance history for graphs.
     # show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
 
+    plt.plot(
+        [(index + 1) * 0.5 for index, val in enumerate(observation_history)],
+        observation_history,
+        marker="o",
+        linestyle="-",
+        color="b",
+    )
+    plt.xlabel("year")
+    plt.ylabel("observed population")
+    plt.title("observed pop vs time")
+    # plt.legend()
+    plt.show()
     return
 
 
