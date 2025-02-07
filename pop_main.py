@@ -167,7 +167,7 @@ def get_resistant_seed_freq_from_freq(
 
 def get_population_history(
     iteration_history: list[population_model.PopulationModel], location
-) -> list:
+) -> list[float]:
     """Get the population history of each iteration of the model.
 
     Returns a list containing absolute population values.
@@ -185,7 +185,7 @@ def get_population_history(
 
 def get_resistance_history(
     iteration_history: list[population_model.PopulationModel], location
-) -> list:
+) -> list[float]:
     """Get the resistance history of each iteration of the model.
 
     Returns a list containing resistance values.
