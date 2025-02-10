@@ -435,10 +435,8 @@ def events(
 
 
 def calculate_percent_change(values):
-    return [
-        round((values[i] - values[i - 1]) / values[i - 1], 4)
-        for i in range(1, len(values))
-    ]
+    """TODO"""
+    return [(values[i] - values[i - 1]) / values[i - 1] for i in range(1, len(values))]
 
 
 def main(MAX_TIME=1, verbose=False) -> None:
