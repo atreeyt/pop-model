@@ -444,7 +444,8 @@ def calculate_percent_change(values):
 def main(MAX_TIME=1, verbose=False) -> None:
     TIME_STEPS_PER_YEAR = 12  # If this value is changed, events() must be changed too.
     iteration_history: list[population_model.PopulationModel] = []
-    observation_history: list[float] = []
+    # observation_history: list[float] = []
+    observation_history: dict = {}
 
     observer = observer_model.ObserverModel(
         observation_accuracy=1.0, noise_standard_dev=0.05
@@ -486,37 +487,61 @@ def main(MAX_TIME=1, verbose=False) -> None:
         if Month(month) == Month.MAR or Month(month) == Month.OCT:
             # TODO store as observation data type with date and count?
             observation = observer.observe(pop_model, noisy=True)
-            observation_history.append(observation)
+            # observation_history.append(observation)
+            observation_history[f"{year}-{month}"] = observation
             if verbose:
                 print("\tObservation:", observation)
 
     # Show graph for observations vs time.
     # Remove first observation in March as no previous observation in
     #   October to compare to.
-    observation_history = observation_history[1:]
-    print("observation_history=", [round(i, 2) for i in observation_history])
+    # observation_history = observation_history[1:]
+    # print("observation_history=", [round(i, 2) for i in observation_history])
+    print("observation_history=")
+    for key, val in observation_history.items():
+        print(f"{key}: {val}")
 
-    initial_pop = 0
-    survivor_pop = 0
-    survival_rate = 0
+    initial_pop = None
+    survivor_pop = None
+    survival_rate = None
     survival_rates = []
-    for index, val in enumerate(observation_history):
-        # print(f"{index}: {val}")
-        # First observation.
-        if utils.is_even(index):
-            initial_pop = val
-            continue  # Wait until next observation.
-        # Even number is second observation.
-        if not utils.is_even(index):
-            survivor_pop = val
-            survival_rate = survivor_pop / (initial_pop)
-            # print(survival_rate)
+    # for index, val in enumerate(observation_history):
+    #     # print(f"{index}: {val}")
+    #     # First observation.
+    #     if utils.is_even(index):
+    #         initial_pop = val
+    #         continue  # Wait until next observation.
+    #     # Even number is second observation.
+    #     if not utils.is_even(index):
+    #         survivor_pop = val
+    #         survival_rate = survivor_pop / (initial_pop)
+    #         # print(survival_rate)
+    #         survival_rates.append(survival_rate)
+    for key, val in observation_history.items():
+        _, month = key.split("-")
+        month = int(month)
+        if Month(month) == Month.OCT:
+            initial_pop = float(val)
+            survivor_pop = None
+        if Month(month) == Month.MAR:
+            survivor_pop = float(val)
+        if initial_pop and survivor_pop:
+            survival_rate = survivor_pop / initial_pop
             survival_rates.append(survival_rate)
+            survival_rate = None
+
+    print("survival_rates=", survival_rates)
+
+    plt.plot(range(1, len(survival_rates) + 1), survival_rates)
+    plt.xlabel("time")
+    plt.ylabel("rate")
+    plt.title("survival rates")
+    plt.show()
 
     percent_changes = [
         round(i * 100, 4) for i in calculate_percent_change(survival_rates)
     ]
-    print("percent change=", percent_changes)
+    print("percent changes=", percent_changes)
 
     plt.plot(
         range(1, len(percent_changes) + 1, 1),
@@ -532,11 +557,11 @@ def main(MAX_TIME=1, verbose=False) -> None:
     plt.show()
 
     # Print lists of population and resistance history for graphs.
-    # show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
+    show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
 
     plt.plot(
         [(index + 1) * 0.5 for index, val in enumerate(observation_history)],
-        observation_history,
+        list(observation_history.values()),
         marker="o",
         linestyle="-",
         color="b",
