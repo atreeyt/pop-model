@@ -12,6 +12,7 @@ import pandas as pd
 import observer_model
 import population_model
 import utils
+import numpy as np
 
 
 def parse_arguments():
@@ -386,7 +387,9 @@ def events(
     month = get_month(t, TIME_STEPS_PER_YEAR)
 
     if t == 0:
-        pop_model.add_seeds("rr", 1_000_000, location="underground")
+        # Herbicide resistant biotypes occur at frequencies of 10e-8 or less.
+        # Simard and Laforest, 2024, p.533
+        pop_model.add_seeds("rr", 100_000_000, location="underground")
         pop_model.add_seeds("Rr", 1, location="underground")
         change_occurred = True
         return pop_model, change_occurred
@@ -435,6 +438,23 @@ def events(
     return pop_model, change_occurred
 
 
+def trenddetector(list_of_index, array_of_data, order=1) -> float:
+    result = np.polyfit(list_of_index, list(array_of_data), order)
+    # print("trenddetector result=")
+    # print(result)
+    slope = result[-2]
+    return float(slope)
+
+
+def calculate_moving_averages(x: list, window_size: int = 3) -> list:
+    moving_averages = []
+    for i in range(0, len(x) - window_size + 1):
+        window = x[i : i + window_size]  # Elements in the list to consider.
+        window_average = sum(window) / window_size
+        moving_averages.append(window_average)
+    return moving_averages
+
+
 def calculate_percent_change(values):
     """TODO"""
     return [(values[i] - values[i - 1]) / values[i - 1] for i in range(1, len(values))]
@@ -447,7 +467,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
     observation_history: dict = {}
 
     observer = observer_model.ObserverModel(
-        observation_accuracy=1.0, noise_standard_dev=0.025
+        observation_accuracy=1.0, noise_standard_dev=0.05
     )
 
     # Compute for t amount of years.
@@ -531,6 +551,52 @@ def main(MAX_TIME=1, verbose=False) -> None:
 
     print("survival_rates=", survival_rates)
 
+    window_size = 5
+    moving_averages = calculate_moving_averages(survival_rates, window_size=window_size)
+    print(f"Moving averages with window_size={window_size}:")
+    print(moving_averages)
+    print()
+
+    # for i in range(1, len(moving_averages)):
+    #    trend_rate = trenddetector(range(1, i + 1), moving_averages[:i])
+    #    print("trend_rate=", trend_rate)
+
+    plt.plot(range(1, len(moving_averages) + 1), moving_averages)
+    plt.xlabel("time")
+    plt.ylabel("rate")
+    plt.title("moving averages of survival_rates")
+    plt.show()
+
+    # A look at the linear fit being produced by polyfit.
+    x = range(1, len(moving_averages) + 1)
+    y = moving_averages
+    coefficients = np.polyfit(x, y, 1)
+    print("Linear Fit Coefficients:", coefficients)
+
+    # Create polynomial function
+    p = np.poly1d(coefficients)
+
+    plt.scatter(x, y, label="Data Points")
+    plt.plot(x, p(x), label="Linear Fit", color="red")
+    plt.legend()
+    plt.show()
+
+    #    for i in range(1, len(survival_rates)):
+    #
+    #        # A look at the linear fit being produced by polyfit.
+    #        x = range(1, i + 1)
+    #        y = survival_rates[:i]
+    #        coefficients = np.polyfit(x, y, 1)
+    #        print("Linear Fit Coefficients:", coefficients)
+    #
+    #        # Create polynomial function
+    #        p = np.poly1d(coefficients)
+    #
+    #        plt.scatter(x, y, label="Data Points")
+    #        plt.plot(x, p(x), label="Linear Fit", color="red")
+    #        plt.legend()
+    #        plt.show()
+
     plt.plot(range(1, len(survival_rates) + 1), survival_rates)
     plt.xlabel("time")
     plt.ylabel("rate")
@@ -542,18 +608,18 @@ def main(MAX_TIME=1, verbose=False) -> None:
     ]
     print("percent changes=", percent_changes)
 
-    plt.plot(
-        range(1, len(percent_changes) + 1, 1),
-        percent_changes,
-        marker="o",
-        linestyle="-",
-        color="b",
-    )
-    plt.xlabel("year")
-    plt.ylabel("percent change")
-    plt.title("")
-    # plt.legend()
-    plt.show()
+    # plt.plot(
+    #     range(1, len(percent_changes) + 1, 1),
+    #     percent_changes,
+    #     marker="o",
+    #     linestyle="-",
+    #     color="b",
+    # )
+    # plt.xlabel("year")
+    # plt.ylabel("percent change")
+    # plt.title("")
+    # # plt.legend()
+    # plt.show()
 
     # Print lists of population and resistance history for graphs.
     show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
