@@ -537,7 +537,9 @@ def main(MAX_TIME=1, verbose=False) -> None:
     plt.title("survival rates")
     plt.show()
 
-    percent_changes = [round(i * 100, 4) for i in calculate_percent_idk(survival_rates)]
+    percent_changes = [
+        round(i * 100, 4) for i in calculate_percent_change(survival_rates)
+    ]
     print("percent changes=", percent_changes)
 
     plt.plot(
