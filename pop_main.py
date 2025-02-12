@@ -275,7 +275,7 @@ def print_population_stats(
 
 
 def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> None:
-    fig, ax1 = plt.subplots()
+    _, ax1 = plt.subplots()
 
     x = pd.date_range(
         start="12/2024", periods=MAX_TIME * TIME_STEPS_PER_YEAR + 1, freq="ME"
@@ -386,14 +386,15 @@ def events(
     month = get_month(t, TIME_STEPS_PER_YEAR)
 
     if t == 0:
-        pop_model.add_seeds("rr", 1_000, location="underground")
+        pop_model.add_seeds("rr", 1_000_000, location="underground")
         pop_model.add_seeds("Rr", 1, location="underground")
         change_occurred = True
         return pop_model, change_occurred
 
-    # if year == 1 and month == 1:
-    # Do some event only needed for this month.
-    # return
+    if year == 1 and month == 1:
+        # Do some event only needed for this month.
+        # return
+        """Do some event"""
 
     match Month(month):
         case Month.JAN:
@@ -446,7 +447,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
     observation_history: dict = {}
 
     observer = observer_model.ObserverModel(
-        observation_accuracy=1.0, noise_standard_dev=0.05
+        observation_accuracy=1.0, noise_standard_dev=0.025
     )
 
     # Compute for t amount of years.
@@ -536,9 +537,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
     plt.title("survival rates")
     plt.show()
 
-    percent_changes = [
-        round(i * 100, 4) for i in calculate_percent_change(survival_rates)
-    ]
+    percent_changes = [round(i * 100, 4) for i in calculate_percent_idk(survival_rates)]
     print("percent changes=", percent_changes)
 
     plt.plot(
