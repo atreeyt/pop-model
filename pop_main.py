@@ -580,22 +580,25 @@ def main(MAX_TIME=1, verbose=False) -> None:
     plt.plot(x, p(x), label="Linear Fit", color="red")
     plt.legend()
     plt.show()
+    coefficients_list = []
+    for i in range(1, len(survival_rates)):
 
-    #    for i in range(1, len(survival_rates)):
-    #
-    #        # A look at the linear fit being produced by polyfit.
-    #        x = range(1, i + 1)
-    #        y = survival_rates[:i]
-    #        coefficients = np.polyfit(x, y, 1)
-    #        print("Linear Fit Coefficients:", coefficients)
-    #
-    #        # Create polynomial function
+        # A look at the linear fit being produced by polyfit.
+        x = range(1, i + 1)
+        y = survival_rates[:i]
+        coefficients = np.polyfit(x, y, 1)
+        print("Linear Fit Coefficients:", coefficients)
+        coefficients_list.append(coefficients[0])
+        # Create polynomial function
     #        p = np.poly1d(coefficients)
     #
     #        plt.scatter(x, y, label="Data Points")
     #        plt.plot(x, p(x), label="Linear Fit", color="red")
     #        plt.legend()
     #        plt.show()
+    plt.plot(range(1, len(coefficients_list) - 2), coefficients_list[3:])
+    plt.title("coefficients")
+    plt.show()
 
     plt.plot(range(1, len(survival_rates) + 1), survival_rates)
     plt.xlabel("time")
