@@ -66,7 +66,7 @@ class PopulationModel:
         pop_dict = seed_pop.get_population()
         seeds_dict = {key: pop_dict[key] * rate for key in pop_dict.keys()}
 
-        logger.debug(f"Overground...")
+        logger.debug("Overground...")
         seed_pop = self._get_population_object(location="overground")
         for chromosome, count in seeds_dict.items():
             seed_pop.add_seeds(chromosome, count)
@@ -84,7 +84,7 @@ class PopulationModel:
         underground population.
         """
 
-        logger.debug(f"Returning seeds to seedbank...")
+        logger.debug("Returning seeds to seedbank...")
         if rate < 0 or rate == 0 or rate > 1:
             logger.warning(f"return_seeds_to_seedbank has a unexpected rate: {rate}")
 
@@ -222,7 +222,7 @@ class PopulationModel:
         seed_pop = self._get_population_object(location="underground")
         for chromosome, count in new_counts.items():
             seed_pop.add_seeds(chromosome, count)
-        logger.info(f"Calculated population change.")
+        logger.info("Calculated population change.")
         return new_counts
 
     def get_population(self, location) -> dict:
