@@ -493,7 +493,7 @@ def events(
         change_occurred = True
         return pop_model, change_occurred
 
-    if year == 15 and month == 2:
+    if year == 10 and month == 2:
         # Do some event only needed for this month.
         pop_model.add_seeds("Rr", 10, location="underground")
         change_occurred = True
@@ -545,7 +545,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
     observation_history: dict = {}
 
     observer = observer_model.ObserverModel(
-        observation_accuracy=1.0, noise_standard_dev=0.0
+        observation_accuracy=1.0, noise_standard_dev=0.05
     )
 
     # Compute for t amount of years.
@@ -618,23 +618,38 @@ def main(MAX_TIME=1, verbose=False) -> None:
     #     observation is available.
     survival_rates = calculate_survival_rates(observation_history)
 
+    print("Graph of survival rates.")
     # Survival rates are measured starting from the second year,
     #     therefore +2. Mar 2nd year - Oct 1st year.
     plt.plot(range(2, len(survival_rates) + 2), survival_rates)
+    year_to_stop = 26
+    # plt.plot(range(2, year_to_stop + 1), survival_rates[: year_to_stop - 1])
     plt.xlabel("year (summer), e.g. 2 is March 2002")
     plt.ylabel("rate")
     plt.title("survival rates")
+    plt.show()
+
+    import seaborn as sns
+
+    # Survival rates starts at 2, ends at MAX_TIME. Index 0 = 2. i = year-2.
+    sns.boxplot(survival_rates[: 25 - 2])
+    plt.title("boxplot")
     plt.show()
 
     # percent_changes = [
     #     round(i * 100, 4) for i in calculate_percent_change(survival_rates)
     # ]
 
+    print("Graph of moving averages of survival rates.")
     # Moving averages graph.
     window_size = 5
     moving_averages = calculate_moving_averages(survival_rates, window_size=window_size)
-
-    plt.plot(range(window_size, len(survival_rates) + 1), moving_averages)
+    # This range is because survival rates cannot be computed until the second year.
+    # Then the moving average cannot be calculated until the <window_size> has elapsed.
+    # This results in the first data point occurring in year <1+window_size>.
+    plt.plot(
+        range(1 + window_size, len(moving_averages) + window_size + 1), moving_averages
+    )
     plt.xlabel("time")
     plt.ylabel(f"average rate, window {window_size}")
     plt.title("moving averages of survival_rates")
@@ -651,10 +666,11 @@ def main(MAX_TIME=1, verbose=False) -> None:
     # plt.legend()
     # plt.show()
 
+    print("Graphs of moving averages with a linear fit.")
     # Graph moving averages+ linear fit, increasing number of points each iteration.
     coefficients_list = []
-    for i in range(1, len(moving_averages)):
-        x = range(window_size, i + window_size)
+    for i in range(1, len(moving_averages) + 1):
+        x = range(1 + window_size, i + 1 + window_size)
         y = moving_averages[:i]
         coefficients = np.polyfit(x, y, 1)
         coefficients_list.append(coefficients[0])
@@ -666,20 +682,23 @@ def main(MAX_TIME=1, verbose=False) -> None:
         ax.set_ylim([0.0, 1.5])
         plt.title("moving_averages with linear fit")
         plt.legend()
+        print(f"{coefficients_list[-1]:.20f}")
         plt.show()
 
+    print("Graph of coefficients from moving averages of survival rates.")
     # Coefficients graph from the survival rates, this is the value that would be given in real time.
-    print("coefficients_list (moving averages)=", coefficients_list)
-    x = range(window_size, len(coefficients_list) + window_size)
+    # print("coefficients_list (moving averages)=", coefficients_list)
+    x = range(1 + window_size, len(coefficients_list) + 1 + window_size)
     y = coefficients_list
     plt.plot(x, y)
     plt.title("coefficients from moving averages of survival rates")
     plt.show()
 
+    print("Graphs of survival rates with a linear fit.")
     # Graph survival rates + linear fit, increasing number of points each iteration.
     coefficients_list = []
-    for i in range(1, len(survival_rates)):
-        x = range(1, i + 1)
+    for i in range(1, len(survival_rates) + 1):
+        x = range(2, i + 2)
         y = survival_rates[:i]
         coefficients = np.polyfit(x, y, 1)
         coefficients_list.append(coefficients[0])
@@ -690,11 +709,15 @@ def main(MAX_TIME=1, verbose=False) -> None:
         ax.set_ylim([0.0, 1.5])
         plt.title("survival_rates with linear fit")
         plt.legend()
+        print(coefficients_list[-1])
         plt.show()
 
+    print("Graph of coefficients from survival rates.")
     # Coefficients graph from the survival rates, this is the value that would be given in real time.
-    print("coefficients_list (survival_rates)=", coefficients_list)
-    plt.plot(range(1, len(coefficients_list) - 2), coefficients_list[3:])
+    # print("coefficients_list (survival_rates)=", coefficients_list)
+    x = range(2, len(coefficients_list) + 2)
+    y = coefficients_list
+    plt.plot(x, y)
     plt.title("coefficients from survival rates")
     plt.show()
 
