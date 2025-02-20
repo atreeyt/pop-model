@@ -185,17 +185,41 @@ def get_population_history(
 
 
 def get_resistance_history(
-    iteration_history: list[population_model.PopulationModel], location
+    iteration_history: list[population_model.PopulationModel],
+    location,
+    if_no_seeds_then_max=False,
 ) -> list[float]:
     """Get the resistance history of each iteration of the model.
 
     Returns a list containing resistance values.
+    TODO update
     """
-    resistance_history = [
-        get_resistant_seed_freq_from_freq(t.get_frequency(location=location))
-        for t in iteration_history
-    ]
+    resistance_history = []
+    for t in iteration_history:
+        freq = t.get_frequency(location=location)
+        resistant_freq = get_resistant_seed_freq_from_freq(freq)
+        resistance_history.append(resistant_freq)
     return resistance_history
+
+
+def get_t_from_month_year(MONTH, TIME_STEPS_PER_YEAR, YEAR=None) -> list:
+    """TODO
+
+    TODO this is horribly inefficient
+    """
+
+    list_of_t = []
+    for t in TIME_STEPS_PER_YEAR:
+        year = get_year(t, TIME_STEPS_PER_YEAR)
+        month = get_month(t, TIME_STEPS_PER_YEAR)
+        # Only return t when year and month.
+        if YEAR:
+            if year == YEAR and month == MONTH:
+                return [t]
+        else:
+            if month == MONTH:
+                list_of_t.append(t)
+    return list_of_t
 
 
 def get_year(t, time_steps_per_year) -> int:
@@ -275,11 +299,75 @@ def print_population_stats(
     return
 
 
+def calculate_percent_change(values):
+    """TODO remove. Unused."""
+    return [(values[i] - values[i - 1]) / values[i - 1] for i in range(1, len(values))]
+
+
+def calculate_survival_rates(observations: dict) -> list:
+    initial_pop = None
+    survivor_pop = None
+    survival_rate = None
+    survival_rates = []
+    for key, val in observations.items():
+        _, month = key.split("-")
+        month = int(month)
+        if Month(month) == Month.OCT:
+            initial_pop = float(val)
+            survivor_pop = None
+        if Month(month) == Month.MAR:
+            survivor_pop = float(val)
+        if initial_pop and survivor_pop:
+            survival_rate = survivor_pop / initial_pop
+            survival_rates.append(survival_rate)
+            survival_rate = None
+
+    logging.debug("survival_rates=", survival_rates)
+    return survival_rates
+
+
+def calculate_survival_rates_from_list(observations: list) -> list:
+    """untested"""
+    initial_pop = None
+    survivor_pop = None
+    survival_rate = None
+    survival_rates = []
+    for val in observations:
+        if initial_pop is None:
+            initial_pop = val
+        elif survivor_pop is None:
+            survivor_pop = val
+        if initial_pop and survivor_pop:
+            survival_rate = survivor_pop / initial_pop
+            survival_rates.append(survival_rate)
+            initial_pop = None
+            survivor_pop = None
+    return survival_rates
+
+
+def trenddetector(list_of_index, array_of_data, order=1) -> float:
+    """TODO remove. Unused"""
+    result = np.polyfit(list_of_index, list(array_of_data), order)
+    # print("trenddetector result=")
+    # print(result)
+    slope = result[-2]
+    return float(slope)
+
+
+def calculate_moving_averages(x: list, window_size: int = 3) -> list:
+    moving_averages = []
+    for i in range(0, len(x) - window_size + 1):
+        window = x[i : i + window_size]  # Elements in the list to consider.
+        window_average = sum(window) / window_size
+        moving_averages.append(window_average)
+    return moving_averages
+
+
 def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> None:
     _, ax1 = plt.subplots()
 
     x = pd.date_range(
-        start="12/2024", periods=MAX_TIME * TIME_STEPS_PER_YEAR + 1, freq="ME"
+        start="12/2000", periods=MAX_TIME * TIME_STEPS_PER_YEAR + 1, freq="ME"
     )
 
     y1 = get_population_history(iteration_history, location="overground")
@@ -294,78 +382,90 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
     ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Show only the year
 
     ax2 = ax1.twinx()
-    y3 = get_resistance_history(iteration_history, location="overground")
-    y4 = get_resistance_history(iteration_history, location="underground")
-    ax2.plot(x, y3, "g:")
-    ax2.plot(x, y4, "r:")
+    # y3 = get_resistance_history(iteration_history, location="overground")
+    # y4 = get_resistance_history(iteration_history, location="underground")
+    # ax2.plot(x, y3, "g:")
+    # ax2.plot(x, y4, "r:")
+    overall_pop = {}
+    y_combined_resistance = []
+    for t in iteration_history:
+        underground_pop = t.get_population(location="underground")
+        overground_pop = t.get_population(location="overground")
+        for key in underground_pop:
+            if key in overground_pop:
+                overall_pop[key] = underground_pop[key] + overground_pop[key]
+        resistance = get_resistant_seed_freq_from_pop(overall_pop)
+        y_combined_resistance.append(resistance)
+    # y_combined_resistance = [(a + b) / 2 for a, b in zip(y3, y4)]
+    ax2.plot(x, y_combined_resistance, "b:")
     ax2.set_ylabel("resistance rate (...)")
     ax2.set_ylim((0.0, 1.0))
 
     ax1.legend()
     # ax2.legend()
-    vlines = pd.date_range(start="12/2024", periods=MAX_TIME + 1, freq="YE")
+    vlines = pd.date_range(start="12/2000", periods=MAX_TIME + 1, freq="YE")
     ax2.vlines(vlines, 0, 1, color="grey", linewidth=0.4, alpha=0.8)
 
     # Extra vlines for displaying events within the first year (for visual clarity).
-    vlines = pd.date_range(start="02/2025", periods=1, freq="D")
-    ax2.vlines(
-        vlines,
-        0,
-        1,
-        color="red",
-        linestyles="dashed",
-        linewidth=1,
-        alpha=0.8,
-        label="germination",
-    )
+    # vlines = pd.date_range(start="02/2025", periods=1, freq="D")
+    # ax2.vlines(
+    #     vlines,
+    #     0,
+    #     1,
+    #     color="red",
+    #     linestyles="dashed",
+    #     linewidth=1,
+    #     alpha=0.8,
+    #     label="germination",
+    # )
 
-    vlines = pd.date_range(start="06/2025", periods=1, freq="D")
-    ax2.vlines(
-        vlines,
-        0,
-        1,
-        color="blue",
-        linestyles="dashed",
-        linewidth=1,
-        alpha=0.8,
-        label="crossing",
-    )
+    # vlines = pd.date_range(start="06/2025", periods=1, freq="D")
+    # ax2.vlines(
+    #     vlines,
+    #     0,
+    #     1,
+    #     color="blue",
+    #     linestyles="dashed",
+    #     linewidth=1,
+    #     alpha=0.8,
+    #     label="crossing",
+    # )
 
-    vlines = pd.date_range(start="08/2025", periods=1, freq="D")
-    ax2.vlines(
-        vlines,
-        0,
-        1,
-        color="green",
-        linestyles="dashed",
-        linewidth=1,
-        alpha=0.8,
-        label="seeds return",
-    )
+    # vlines = pd.date_range(start="08/2025", periods=1, freq="D")
+    # ax2.vlines(
+    #     vlines,
+    #     0,
+    #     1,
+    #     color="green",
+    #     linestyles="dashed",
+    #     linewidth=1,
+    #     alpha=0.8,
+    #     label="seeds return",
+    # )
 
-    vlines = pd.date_range(start="10/2025", periods=1, freq="D")
-    ax2.vlines(
-        vlines,
-        0,
-        1,
-        color="purple",
-        linestyles="dashed",
-        linewidth=1,
-        alpha=0.8,
-        label="germination",
-    )
+    # vlines = pd.date_range(start="10/2025", periods=1, freq="D")
+    # ax2.vlines(
+    #     vlines,
+    #     0,
+    #     1,
+    #     color="purple",
+    #     linestyles="dashed",
+    #     linewidth=1,
+    #     alpha=0.8,
+    #     label="germination",
+    # )
 
-    vlines = pd.date_range(start="11/2025", periods=1, freq="D")
-    ax2.vlines(
-        vlines,
-        0,
-        1,
-        color="orange",
-        linestyles="dashed",
-        linewidth=1,
-        alpha=0.8,
-        label="herbicide applied",
-    )
+    # vlines = pd.date_range(start="11/2025", periods=1, freq="D")
+    # ax2.vlines(
+    #     vlines,
+    #     0,
+    #     1,
+    #     color="orange",
+    #     linestyles="dashed",
+    #     linewidth=1,
+    #     alpha=0.8,
+    #     label="herbicide applied",
+    # )
     ax2.legend(loc="upper center")
     plt.show()
     return
@@ -387,17 +487,17 @@ def events(
     month = get_month(t, TIME_STEPS_PER_YEAR)
 
     if t == 0:
-        # Herbicide resistant biotypes occur at frequencies of 10e-8 or less.
-        # Simard and Laforest, 2024, p.533
+        # Herbicide resistant biotypes occur at frequencies of 10e-8
+        # or less (100_000_000). Simard and Laforest, 2024, p. 533.
         pop_model.add_seeds("rr", 100_000_000, location="underground")
-        pop_model.add_seeds("Rr", 1, location="underground")
         change_occurred = True
         return pop_model, change_occurred
 
-    if year == 1 and month == 1:
+    if year == 15 and month == 2:
         # Do some event only needed for this month.
-        # return
-        """Do some event"""
+        pop_model.add_seeds("Rr", 10, location="underground")
+        change_occurred = True
+        # return pop_model, change_occurred
 
     match Month(month):
         case Month.JAN:
@@ -438,36 +538,14 @@ def events(
     return pop_model, change_occurred
 
 
-def trenddetector(list_of_index, array_of_data, order=1) -> float:
-    result = np.polyfit(list_of_index, list(array_of_data), order)
-    # print("trenddetector result=")
-    # print(result)
-    slope = result[-2]
-    return float(slope)
-
-
-def calculate_moving_averages(x: list, window_size: int = 3) -> list:
-    moving_averages = []
-    for i in range(0, len(x) - window_size + 1):
-        window = x[i : i + window_size]  # Elements in the list to consider.
-        window_average = sum(window) / window_size
-        moving_averages.append(window_average)
-    return moving_averages
-
-
-def calculate_percent_change(values):
-    """TODO"""
-    return [(values[i] - values[i - 1]) / values[i - 1] for i in range(1, len(values))]
-
-
 def main(MAX_TIME=1, verbose=False) -> None:
-    TIME_STEPS_PER_YEAR = 12  # If this value is changed, events() must be changed too.
+    # If this value is changed, events() must be changed too.
+    TIME_STEPS_PER_YEAR = 12
     iteration_history: list[population_model.PopulationModel] = []
-    # observation_history: list[float] = []
     observation_history: dict = {}
 
     observer = observer_model.ObserverModel(
-        observation_accuracy=1.0, noise_standard_dev=0.05
+        observation_accuracy=1.0, noise_standard_dev=0.0
     )
 
     # Compute for t amount of years.
@@ -511,134 +589,115 @@ def main(MAX_TIME=1, verbose=False) -> None:
             if verbose:
                 print("\tObservation:", observation)
 
-    # Show graph for observations vs time.
-    # Remove first observation in March as no previous observation in
-    #   October to compare to.
-    # observation_history = observation_history[1:]
-    # print("observation_history=", [round(i, 2) for i in observation_history])
-    print("observation_history=")
-    for key, val in observation_history.items():
-        print(f"{key}: {val}")
+    for year in range(2, MAX_TIME + 1):
+        # Ignore first March and last October, as no pre/post to compare to.
+        month = Month.MAR.value
+        count_last_year = observation_history[f"{year-1}-{month}"]
+        count_this_year = observation_history[f"{year}-{month}"]
+        if count_this_year > count_last_year:
+            print("Resistance detected using post-control, year", year)
 
-    initial_pop = None
-    survivor_pop = None
-    survival_rate = None
-    survival_rates = []
-    # for index, val in enumerate(observation_history):
-    #     # print(f"{index}: {val}")
-    #     # First observation.
-    #     if utils.is_even(index):
-    #         initial_pop = val
-    #         continue  # Wait until next observation.
-    #     # Even number is second observation.
-    #     if not utils.is_even(index):
-    #         survivor_pop = val
-    #         survival_rate = survivor_pop / (initial_pop)
-    #         # print(survival_rate)
-    #         survival_rates.append(survival_rate)
-    for key, val in observation_history.items():
-        _, month = key.split("-")
-        month = int(month)
-        if Month(month) == Month.OCT:
-            initial_pop = float(val)
-            survivor_pop = None
-        if Month(month) == Month.MAR:
-            survivor_pop = float(val)
-        if initial_pop and survivor_pop:
-            survival_rate = survivor_pop / initial_pop
-            survival_rates.append(survival_rate)
-            survival_rate = None
-
-    print("survival_rates=", survival_rates)
-
-    window_size = 5
-    moving_averages = calculate_moving_averages(survival_rates, window_size=window_size)
-    print(f"Moving averages with window_size={window_size}:")
-    print(moving_averages)
-    print()
-
-    # for i in range(1, len(moving_averages)):
-    #    trend_rate = trenddetector(range(1, i + 1), moving_averages[:i])
-    #    print("trend_rate=", trend_rate)
-
-    plt.plot(range(1, len(moving_averages) + 1), moving_averages)
-    plt.xlabel("time")
-    plt.ylabel("rate")
-    plt.title("moving averages of survival_rates")
-    plt.show()
-
-    # A look at the linear fit being produced by polyfit.
-    x = range(1, len(moving_averages) + 1)
-    y = moving_averages
-    coefficients = np.polyfit(x, y, 1)
-    print("Linear Fit Coefficients:", coefficients)
-
-    # Create polynomial function
-    p = np.poly1d(coefficients)
-
-    plt.scatter(x, y, label="Data Points")
-    plt.plot(x, p(x), label="Linear Fit", color="red")
-    plt.legend()
-    plt.show()
-    coefficients_list = []
-    for i in range(1, len(survival_rates)):
-
-        # A look at the linear fit being produced by polyfit.
-        x = range(1, i + 1)
-        y = survival_rates[:i]
-        coefficients = np.polyfit(x, y, 1)
-        print("Linear Fit Coefficients:", coefficients)
-        coefficients_list.append(coefficients[0])
-        # Create polynomial function
-    #        p = np.poly1d(coefficients)
-    #
-    #        plt.scatter(x, y, label="Data Points")
-    #        plt.plot(x, p(x), label="Linear Fit", color="red")
-    #        plt.legend()
-    #        plt.show()
-    plt.plot(range(1, len(coefficients_list) - 2), coefficients_list[3:])
-    plt.title("coefficients")
-    plt.show()
-
-    plt.plot(range(1, len(survival_rates) + 1), survival_rates)
-    plt.xlabel("time")
-    plt.ylabel("rate")
-    plt.title("survival rates")
-    plt.show()
-
-    percent_changes = [
-        round(i * 100, 4) for i in calculate_percent_change(survival_rates)
-    ]
-    print("percent changes=", percent_changes)
-
-    # plt.plot(
-    #     range(1, len(percent_changes) + 1, 1),
-    #     percent_changes,
-    #     marker="o",
-    #     linestyle="-",
-    #     color="b",
-    # )
-    # plt.xlabel("year")
-    # plt.ylabel("percent change")
-    # plt.title("")
-    # # plt.legend()
-    # plt.show()
-
-    # Print lists of population and resistance history for graphs.
+    # Show graphs.
+    # Population and resistance graph.
     show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
 
+    # Observation graph.
     plt.plot(
         [(index + 1) * 0.5 for index, val in enumerate(observation_history)],
         list(observation_history.values()),
         marker="o",
         linestyle="-",
-        color="b",
     )
     plt.xlabel("year")
     plt.ylabel("observed population")
     plt.title("observed pop vs time")
-    # plt.legend()
     plt.show()
+    # print("observation_history=", observation_history)
+    # Survival rates graph.
+    # The first observations in March is ignored, as no pre-control
+    #     observation is available.
+    survival_rates = calculate_survival_rates(observation_history)
+
+    # Survival rates are measured starting from the second year,
+    #     therefore +2. Mar 2nd year - Oct 1st year.
+    plt.plot(range(2, len(survival_rates) + 2), survival_rates)
+    plt.xlabel("year (summer), e.g. 2 is March 2002")
+    plt.ylabel("rate")
+    plt.title("survival rates")
+    plt.show()
+
+    # percent_changes = [
+    #     round(i * 100, 4) for i in calculate_percent_change(survival_rates)
+    # ]
+
+    # Moving averages graph.
+    window_size = 5
+    moving_averages = calculate_moving_averages(survival_rates, window_size=window_size)
+
+    plt.plot(range(window_size, len(survival_rates) + 1), moving_averages)
+    plt.xlabel("time")
+    plt.ylabel(f"average rate, window {window_size}")
+    plt.title("moving averages of survival_rates")
+    plt.show()
+
+    # # Polynomial fitting (linear fit), regression analysis graph.
+    # x = range(1, len(moving_averages) + 1)
+    # y = moving_averages
+    # coefficients = np.polyfit(x, y, 1)
+    # p = np.poly1d(coefficients)
+    # plt.scatter(x, y, label="Data Points")
+    # plt.plot(x, p(x), label="Linear Fit", color="red")
+    # plt.title('moving averages with linear fit')
+    # plt.legend()
+    # plt.show()
+
+    # Graph moving averages+ linear fit, increasing number of points each iteration.
+    coefficients_list = []
+    for i in range(1, len(moving_averages)):
+        x = range(window_size, i + window_size)
+        y = moving_averages[:i]
+        coefficients = np.polyfit(x, y, 1)
+        coefficients_list.append(coefficients[0])
+        p = np.poly1d(coefficients)
+        plt.scatter(x, y, label="Data Points")
+        plt.plot(x, p(x), label="Linear Fit", color="red")
+        ax = plt.gca()
+        # ax.set_xlim([xmin, xmax])
+        ax.set_ylim([0.0, 1.5])
+        plt.title("moving_averages with linear fit")
+        plt.legend()
+        plt.show()
+
+    # Coefficients graph from the survival rates, this is the value that would be given in real time.
+    print("coefficients_list (moving averages)=", coefficients_list)
+    x = range(window_size, len(coefficients_list) + window_size)
+    y = coefficients_list
+    plt.plot(x, y)
+    plt.title("coefficients from moving averages of survival rates")
+    plt.show()
+
+    # Graph survival rates + linear fit, increasing number of points each iteration.
+    coefficients_list = []
+    for i in range(1, len(survival_rates)):
+        x = range(1, i + 1)
+        y = survival_rates[:i]
+        coefficients = np.polyfit(x, y, 1)
+        coefficients_list.append(coefficients[0])
+        p = np.poly1d(coefficients)
+        plt.scatter(x, y, label="Data Points")
+        plt.plot(x, p(x), label="Linear Fit", color="red")
+        ax = plt.gca()
+        ax.set_ylim([0.0, 1.5])
+        plt.title("survival_rates with linear fit")
+        plt.legend()
+        plt.show()
+
+    # Coefficients graph from the survival rates, this is the value that would be given in real time.
+    print("coefficients_list (survival_rates)=", coefficients_list)
+    plt.plot(range(1, len(coefficients_list) - 2), coefficients_list[3:])
+    plt.title("coefficients from survival rates")
+    plt.show()
+
     return
 
 
