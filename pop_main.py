@@ -7,12 +7,12 @@ from math import ceil
 
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 import observer_model
 import population_model
 import utils
-import numpy as np
 
 
 def parse_arguments():
