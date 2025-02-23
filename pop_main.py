@@ -362,6 +362,27 @@ def calculate_moving_averages(x: list, window_size: int = 3) -> list:
     return moving_averages
 
 
+def calculate_aic(n, sse, k) -> float:
+    """Calculate akaike information criterion. Returns float."""
+    aic = n * np.log(sse / n) + 2 * k
+    return aic
+
+
+def calculate_bic(n, sse, k) -> float:
+    """Calculate bayesian information criterion. Returns float."""
+    bic = n * np.log(sse / n) + k * np.log(n)
+    return bic
+
+
+def calculate_sse(y, y_pred) -> list:
+    """Calculate sum of squared errors. Return list of floats.
+
+    y and y_pred are array-like.
+    """
+    sse = np.sum((y - y_pred) ** 2)
+    return sse
+
+
 def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> None:
     _, ax1 = plt.subplots()
 
