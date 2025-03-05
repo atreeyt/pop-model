@@ -355,15 +355,6 @@ def calculate_survival_rates_from_list(observations: list) -> list:
     return survival_rates
 
 
-def trenddetector(list_of_index, array_of_data, order=1) -> float:
-    """TODO remove. Unused"""
-    result = np.polyfit(list_of_index, list(array_of_data), order)
-    # print("trenddetector result=")
-    # print(result)
-    slope = result[-2]
-    return float(slope)
-
-
 def calculate_moving_averages(x: list, window_size: int = 3) -> list:
     moving_averages = []
     for i in range(0, len(x) - window_size + 1):
@@ -667,10 +658,6 @@ def main(MAX_TIME=1, verbose=False) -> None:
     print(f"Moving averages with window_size={window_size}:")
     print(moving_averages)
     print()
-
-    # for i in range(1, len(moving_averages)):
-    #    trend_rate = trenddetector(range(1, i + 1), moving_averages[:i])
-    #    print("trend_rate=", trend_rate)
 
     plt.plot(range(window_size, len(moving_averages) + window_size), moving_averages)
     plt.xlabel("time")
