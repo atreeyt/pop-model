@@ -202,7 +202,9 @@ def get_resistance_history(
 
 
 def get_t_from_month_year(MONTH, TIME_STEPS_PER_YEAR, YEAR=None) -> list:
-    """TODO
+    """Return the timesteps that correlates to MONTH.
+
+    If YEAR, return a list with a single element of MONTH and YEAR.
 
     TODO this is horribly inefficient
     """
@@ -222,7 +224,7 @@ def get_t_from_month_year(MONTH, TIME_STEPS_PER_YEAR, YEAR=None) -> list:
 
 
 def get_year(t, time_steps_per_year) -> int:
-    # math.ceil
+    """Return the year that timestep t belongs to."""
     return ceil(t / time_steps_per_year)
 
 
@@ -241,6 +243,10 @@ def get_month(t, time_steps_per_year) -> int:
 
 
 def get_month_name(month_num) -> str:
+    """Returns the month's string name given its numerical value [1-12].
+
+    Out of bounds cases return 'January'.
+    """
     match month_num:
         case 1:
             month = "January"
@@ -298,12 +304,17 @@ def print_population_stats(
     return
 
 
-def calculate_percent_change(values):
-    """TODO remove. Unused."""
+def calculate_percent_change(values: list[float | int]):
+    """Calculate the percentage change between i and i-1 in a list of values.
+
+    Returns a list of survival rates. These rates can be negative.
+    len(survival_rates) = len(values) - 1
+    """
     return [(values[i] - values[i - 1]) / values[i - 1] for i in range(1, len(values))]
 
 
 def calculate_survival_rates(observations: dict) -> list:
+    """Calculate the survival rates from the observation dictionary."""
     initial_pop = None
     survivor_pop = None
     survival_rate = None
