@@ -536,7 +536,7 @@ def events(
         change_occurred = True
         return pop_model, change_occurred
 
-    if year == 10 and month == 2:
+    if year == 20 and Month(month) == Month.FEB:
         # Do some event only needed for this month.
         pop_model.add_seeds("Rr", 10, location="underground")
         change_occurred = True
