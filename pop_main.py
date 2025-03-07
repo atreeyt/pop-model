@@ -19,16 +19,22 @@ import utils
 def parse_arguments():
     """Parses command line arguments."""
     parser = argparse.ArgumentParser(description="")
-    parser.add_argument("-t", help="max number of timesteps", dest="maxtime", type=int)
+    parser.add_argument(
+        "-t",
+        "--time",
+        help="Number of years to run the simulation for.",
+        dest="maxtime",
+        type=int,
+    )
     parser.add_argument(
         "-l",
         "--log",
-        help="Log to default file (logs/)",
+        help="Log to default file (logs/).",
         dest="use_logger",
         action="store_true",
     )
     parser.add_argument(
-        "--log_file",
+        "--log_name",
         help='Log file name. Should end with ".log". Default "basic.log".',
         dest="log_name",
         default=None,
@@ -38,17 +44,32 @@ def parse_arguments():
         "--verbose",
         action="count",
         default=0,
-        help="Increase verbosity level (use -v for verbose, -vv for more verbose)",
+        help="Increase verbosity level (use -v for verbose, -vv for more verbose).",
     )
     parser.add_argument(
         "--level",
         help=(
             "Set logging level"
             " [debug, info, warning, error, critical]"
-            " (default warning), overrides -v"
+            " (default warning), overrides -v."
         ),
         dest="log_level",
         default=None,
+    )
+    parser.add_argument(
+        "-s",
+        "--slow",
+        action="store_true",
+        dest="slow",
+        help="Require confirmation to progress to the next year.",
+    )
+    parser.add_argument(
+        "-n",
+        "--noise",
+        type=float,
+        help="Noise standard deviation (float).",
+        default=0.0,
+        dest="noise",
     )
     args = parser.parse_args()
     return args
@@ -857,4 +878,9 @@ if __name__ == "__main__":
         verbose=args.verbose,
     )
     logging.debug("----- BEGIN PROGRAM -----")
-    main(MAX_TIME=args.maxtime, verbose=args.verbose)
+    main(
+        MAX_TIME=args.maxtime,
+        VERBOSE=args.verbose,
+        SLOW=args.slow,
+        NOISE_STD_DEV=args.noise,
+    )
