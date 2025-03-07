@@ -254,7 +254,7 @@ def get_month(t, time_steps_per_year) -> int:
 
     The 'month' has a max of time_steps_per_year. If this value is 4
     then the 'months' in the year are 1,2,3,4 and actually correlate to
-    three real months each.
+    three real months each, e.g. '1' is January, February, and March.
     """
 
     if t == 0:
