@@ -581,22 +581,27 @@ def events(
     return pop_model, change_occurred
 
 
-def main(MAX_TIME=1, verbose=False) -> None:
+def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
     # If this value is changed, events() must be changed too.
     TIME_STEPS_PER_YEAR = 12
     iteration_history: list[population_model.PopulationModel] = []
     observation_history: dict = {}
 
     observer = observer_model.ObserverModel(
-        observation_accuracy=1.0, noise_standard_dev=0.05
+        observation_accuracy=1.0, noise_standard_dev=NOISE_STD_DEV
     )
 
+    last_year = 0
     # Compute for t amount of years.
     for t in range(0, MAX_TIME * TIME_STEPS_PER_YEAR + 1):
         logging.debug(f"timestep={t}")
         year = get_year(t, TIME_STEPS_PER_YEAR)
         month = get_month(t, TIME_STEPS_PER_YEAR)
-        if verbose:
+        if VERBOSE:
+            # Every year pause and wait for confirmation to continue.
+            if SLOW and year > last_year:
+                input("Press ENTER to continue...")
+                last_year = year
             print(f"\n\n--- Year {year}, {get_month_name(month)} ---")
         if t == 0:
             pop_model = population_model.PopulationModel()
@@ -615,7 +620,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
         #     results = pop_model.apply_population_change()
 
         # Showing results.
-        if verbose:
+        if VERBOSE:
             if change_occurred:
                 print("  --OVERGROUND--")
                 print_population_stats(pop_model, "overground")
@@ -629,7 +634,7 @@ def main(MAX_TIME=1, verbose=False) -> None:
             observation = observer.observe(pop_model, noisy=True)
             # observation_history.append(observation)
             observation_history[f"{year}-{month}"] = observation
-            if verbose:
+            if VERBOSE:
                 print("\tObservation:", observation)
 
     for year in range(2, MAX_TIME + 1):
