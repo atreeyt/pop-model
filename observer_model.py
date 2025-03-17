@@ -85,12 +85,18 @@ class ObserverModel:
                 accuracy, self.observation_noise_standard_dev
             )
 
-        count = 0
+        POPULATION = pop_model.get_population(location="overground")
+        count = sum(POPULATION.values())
+        lam = count
+        size = 1
+        poisson = np.random.poisson(lam, size)
+        return poisson
+        """count = 0
         POPULATION = pop_model.get_population(location="overground")
         for key, val in POPULATION.items():
             # Accuracy is returned as a list, but only has one value.
             count += val * accuracy
-
+        """
         return count
 
     def get_noisy_accuracy(self, accuracy, noise_standard_dev) -> float:
