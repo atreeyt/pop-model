@@ -1,5 +1,7 @@
 import logging
 
+import numpy as np
+
 import seed_population
 
 logger = logging.getLogger(__name__)
@@ -49,7 +51,7 @@ class PopulationModel:
         )
         logger.debug("Created PopulationModel instance.")
 
-    def germinate_seeds(self, rate) -> None:
+    def germinate_seeds(self, rate, stochastic=False) -> None:
         """Seeds germinate from the seedbank at the given rate.
 
         Seeds are transferred from the underground population to the
@@ -57,7 +59,6 @@ class PopulationModel:
         means all of the seeds are transferred.
         """
 
-        # TODO ? Add stochastic rate.
         logger.debug("Germinating seeds...")
         if rate < 0 or rate == 0 or rate > 1:
             logger.warning(f"germinate_seeds has a unexpected rate: {rate}")
@@ -65,6 +66,9 @@ class PopulationModel:
         seed_pop = self._get_population_object(location="underground")
         pop_dict = seed_pop.get_population()
         seeds_dict = {key: pop_dict[key] * rate for key in pop_dict.keys()}
+        if stochastic:
+            for chromosome, count in seeds_dict.items():
+                seeds_dict[chromosome] = np.random.binomial(count, rate, 1)
 
         logger.debug("Overground...")
         seed_pop = self._get_population_object(location="overground")
@@ -126,7 +130,7 @@ class PopulationModel:
         seed_pop.remove_seeds(chromosome, count)
         return
 
-    def _get_population_object(self, location):
+    def _get_population_object(self, location) -> seed_population.SeedPopulation:
         assert location in [
             "underground",
             "overground",
@@ -138,9 +142,15 @@ class PopulationModel:
             return self.seed_pop_overground
         else:
             logging.error("location should be ['underground','overground']")
+            exit(0)
 
     def purge_population(
-        self, amount_to_remove, chromosome_list, location, print_to_console=True
+        self,
+        amount_to_remove,
+        chromosome_list,
+        location,
+        stochastic=False,
+        print_to_console=True,
     ) -> None:
         """Remove an absolute value or percentage from the seed
         population.
@@ -151,21 +161,41 @@ class PopulationModel:
         remove_seeds() for silent usage. chromosome_list is a list of
         chromosomes to remove, e.g. ["rr"] or ["rR", "Rr", "rr"].
         """
-
+        """refactor all of this. make just have a single exit point.
+        the logic is becoming too complex and too difficult to follow
+        simplify!
+        """
         if amount_to_remove < 0:
             logging.warning("Attempted population purge with negative value, ignoring.")
             return
 
         seed_pop = self._get_population_object(location)
+        current_population = seed_pop.get_population()
 
+        if amount_to_remove <= 1:  # Assume percentage.
+            pass
+
+        elif amount_to_remove > 1:  # Otherwise assume absolute value.
+            pass
+
+        for chromosome in chromosome_list:
+            if print_to_console:
+                logger.info(
+                    f"Purging {amount_to_remove} {chromosome} seeds from {location}."
+                )
+            seed_pop.remove_seeds(chromosome, amount_to_remove)
+        # return
+
+        # ==============
         # Assume percentage.
         if amount_to_remove <= 1:
             if not chromosome_list:
                 chromosome_list = seed_pop.get_population().keys()
             for chromosome in chromosome_list:
+
                 if print_to_console:
                     logger.info(
-                        f"Purging {amount_to_remove*100}% of {chromosome} seeds from"
+                        f"Purging~{amount_to_remove*100}% of {chromosome} seeds from"
                         f" {location}."
                     )
                 count = seed_pop.get_population()[chromosome]
@@ -175,11 +205,12 @@ class PopulationModel:
 
         # Otherwise assume absolute value.
         for chromosome in chromosome_list:
+            # Add in stochastic option.
             if print_to_console:
                 logger.info(
                     f"Purging {amount_to_remove} {chromosome} seeds from {location}."
                 )
-            seed_pop.remove_seeds(chromosome, count)
+            seed_pop.remove_seeds(chromosome, amount_to_remove)
 
         return
 
