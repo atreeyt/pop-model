@@ -35,7 +35,7 @@ def parse_arguments():
     )
     parser.add_argument(
         "--log_name",
-        help='Log file name. Should end with ".log". Default "basic.log".',
+        help="Log file name. Should end with '.log'. Default 'basic.log'.",
         dest="log_name",
         default=None,
     )
@@ -536,9 +536,9 @@ def events(
         change_occurred = True
         return pop_model, change_occurred
 
-    if year == 20 and Month(month) == Month.FEB:
+    if year == 1 and Month(month) == Month.FEB:
         # Do some event only needed for this month.
-        pop_model.add_seeds("Rr", 10, location="underground")
+        pop_model.add_seeds("Rr", 1_000, location="underground")
         change_occurred = True
         # return pop_model, change_occurred
 
@@ -596,6 +596,7 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
     for t in range(0, MAX_TIME * TIME_STEPS_PER_YEAR + 1):
         logging.debug(f"timestep={t}")
         year = get_year(t, TIME_STEPS_PER_YEAR)
+        # TODO Why compute this every time? Just +1 until new year?
         month = get_month(t, TIME_STEPS_PER_YEAR)
         if VERBOSE:
             # Every year pause and wait for confirmation to continue.
@@ -650,9 +651,10 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
 
     # Print lists of population and resistance history for graphs.
     show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR)
-
+    print(observation_history)
     # Observation graph.
     plt.plot(
+        # range(1, len(observation_history) + 1),
         [
             (index + 1) * 0.5 for index, _ in enumerate(observation_history)
         ],  # TODO Why am I enumerating here? Just use range?
@@ -662,7 +664,70 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
     )
     plt.xlabel("year")
     plt.ylabel("observed population")
-    plt.title("observed pop vs time")
+    plt.title("observed population vs time")
+    y1 = observation_history["1-10"]
+    plt.hlines(
+        y1,
+        1,
+        15,
+        color="red",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label=f"{y1}",
+    )
+    plt.text(15.2, y1, f"{y1:,.0f}", ha="left", va="center", c="red")
+    y2 = observation_history["2-3"]
+    plt.hlines(
+        y2,
+        1,
+        15,
+        color="red",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label=f"{y2}",
+    )
+    plt.text(15.2, y2, f"{y2:,.0f}", ha="left", va="center", c="red")
+    plt.arrow(
+        1.8,  # x
+        y1,  # y
+        0,  # x step
+        y2 - y1,  # y step
+        head_width=0.3,
+        head_length=3_000_000,
+        linewidth=2,
+        color="r",
+        length_includes_head=True,
+    )
+
+    y1 = observation_history["8-10"]
+    plt.hlines(
+        y1,
+        8,
+        15,
+        color="green",
+        linestyles="dashed",
+        linewidth=1,
+        alpha=0.8,
+        label="",
+    )
+    plt.text(15.2, y1, f"{y1:,.0f}", ha="left", va="center", c="green")
+    y2 = observation_history["9-3"]
+    plt.hlines(y2, 8, 15, color="green", linestyles="dashed", linewidth=1, alpha=0.8)
+    plt.text(15.2, y2, f"{y2:,.0f}", ha="left", va="center", c="green")
+    plt.arrow(
+        8.8,  # x
+        y1,  # y
+        0,  # x step
+        y2 - y1,  # y step
+        head_width=0.3,
+        head_length=3_000_000,
+        linewidth=2,
+        color="green",
+        length_includes_head=True,
+    )
+    plt.savefig("test2.pdf", format="pdf")
     plt.show()
 
     # SURVIVAL RATES GRAPH.
