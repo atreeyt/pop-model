@@ -129,7 +129,6 @@ def get_resistant_seed_freq_from_pop(seed_dictionary, susceptible_list=["rr"]) -
 
     Returns a float [0-1].
     """
-    test = 1
     population = sum(seed_dictionary.values())
     total_count = 0
     for chromosome, count in seed_dictionary.items():
