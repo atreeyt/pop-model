@@ -8,11 +8,10 @@ from math import ceil
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
-import seaborn as sns
-
 import observer_model
+import pandas as pd
 import population_model
+import seaborn as sns
 import utils
 
 
@@ -23,8 +22,34 @@ def parse_arguments():
         "-t",
         "--time",
         help="Number of years to run the simulation for.",
-        dest="maxtime",
         type=int,
+    )
+    parser.add_argument(
+        "-n",
+        "--noise",
+        type=float,
+        help="Noise standard deviation (float).",
+        default=0.0,
+    )
+    parser.add_argument(
+        "-a",
+        "--accuracy",
+        type=float,
+        help="Observation accuracy (float). Default 1.0.",
+        default=1.0,
+    )
+    parser.add_argument(
+        "--fpr",
+        type=float,
+        help="False positive rate of observer (percentage). Default 0.0.",
+        default=0.0,
+        dest="fpr",
+    )
+    parser.add_argument(
+        "-s",
+        "--slow",
+        action="store_true",
+        help="Require confirmation to progress to the next year.",
     )
     parser.add_argument(
         "-l",
@@ -34,42 +59,11 @@ def parse_arguments():
         action="store_true",
     )
     parser.add_argument(
-        "--log_name",
-        help="Log file name. Should end with '.log'. Default 'basic.log'.",
-        dest="log_name",
-        default=None,
-    )
-    parser.add_argument(
         "-v",
         "--verbose",
         action="count",
         default=0,
         help="Increase verbosity level (use -v for verbose, -vv for more verbose).",
-    )
-    parser.add_argument(
-        "--level",
-        help=(
-            "Set logging level"
-            " [debug, info, warning, error, critical]"
-            " (default warning), overrides -v."
-        ),
-        dest="log_level",
-        default=None,
-    )
-    parser.add_argument(
-        "-s",
-        "--slow",
-        action="store_true",
-        dest="slow",
-        help="Require confirmation to progress to the next year.",
-    )
-    parser.add_argument(
-        "-n",
-        "--noise",
-        type=float,
-        help="Noise standard deviation (float).",
-        default=0.0,
-        dest="noise",
     )
     args = parser.parse_args()
     return args
@@ -77,49 +71,23 @@ def parse_arguments():
 
 def config(
     use_logger=False,
-    log_name=None,
-    log_folder=None,
-    log_level="warning",
     verbose=0,
 ) -> None:
     """Defines any configuration for the file."""
 
-    assert log_level in [
-        "debug",
-        "info",
-        "warning",
-        "error",
-        "critical",
-        None,
-    ], f"Unknown logging level: {log_level}."
-
-    match log_level:
-        case "debug":
-            log_level = logging.DEBUG
-        case "info":
-            log_level = logging.INFO
-        case "warning":
-            log_level = logging.WARNING
-        case "error":
-            log_level = logging.ERROR
-        case "critical":
-            log_level = logging.CRITICAL
-        case _:
-            if verbose == 0:
-                log_level = logging.WARNING  # default
-            elif verbose == 2:
-                log_level = logging.INFO
-            elif verbose == 3:
-                log_level = logging.DEBUG
-            elif verbose > 3:
-                log_level = logging.DEBUG
-                logging.warning("Verbosity set >3 has no effect.")
+    if verbose == 0:
+        log_level = logging.WARNING  # default
+    elif verbose == 2:
+        log_level = logging.INFO
+    elif verbose == 3:
+        log_level = logging.DEBUG
+    elif verbose > 3:
+        log_level = logging.DEBUG
+        logging.warning("Verbosity set >3 has no effect.")
 
     if use_logger:
-        if log_folder is None:
-            log_folder = "logs"
-        if log_name is None:
-            log_name = "basic.log"
+        log_folder = "logs"
+        log_name = "basic.log"
         # Create path logging directory.
         dir_path = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dir_path, log_folder, log_name)
@@ -161,7 +129,7 @@ def get_resistant_seed_freq_from_pop(seed_dictionary, susceptible_list=["rr"]) -
 
     Returns a float [0-1].
     """
-
+    test = 1
     population = sum(seed_dictionary.values())
     total_count = 0
     for chromosome, count in seed_dictionary.items():
@@ -212,7 +180,6 @@ def get_resistance_history(
     """Get the resistance history of each iteration of the model.
 
     Returns a list containing resistance values.
-    TODO update
     """
     resistance_history = []
     for t in iteration_history:
@@ -302,14 +269,13 @@ def get_month_name(month_num) -> str:
 def pretty_print_dict(dictionary, indent=0, use_tabs=False) -> None:
     for key, val in dictionary.items():
         char = "\t" if use_tabs else " "
-        print(f"{char*indent}{key} : {val}")
+        print(f"{char * indent}{key} : {val}")
     return
 
 
 def print_population_stats(
     pop_model: population_model.PopulationModel, location, n_digits=3
 ) -> None:
-
     population = pop_model.get_population(location=location)
     print("    Population:")
     pretty_print_dict(utils.round_dict_values(population, n=n_digits), indent=8)
@@ -509,7 +475,7 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
     #     alpha=0.8,
     #     label="herbicide applied",
     # )
-    ax2.legend(loc="upper center")
+    # ax2.legend(loc="upper center")
     plt.show()
     return
 
@@ -524,7 +490,6 @@ def events(
     resultant population model is returned.
     bool returned is if the population model was modified/changed at all.
     """
-    # TODO fix docstring, e.g. return type
     change_occurred = False
     year = get_year(t, TIME_STEPS_PER_YEAR)
     month = get_month(t, TIME_STEPS_PER_YEAR)
@@ -581,14 +546,23 @@ def events(
     return pop_model, change_occurred
 
 
-def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
+def main(args) -> None:
+    MAX_TIME = args.time
+    VERBOSE = args.verbose
+    SLOW = args.slow
+    NOISE_STD_DEV = args.noise  # depreciated. TODO remove.
+    OBSERVATION_ACCURACY = args.observation_accuracy
+    OBSERVATION_FPR = args.fpr
+
     # If this value is changed, events() must be changed too.
     TIME_STEPS_PER_YEAR = 12
     iteration_history: list[population_model.PopulationModel] = []
     observation_history: dict = {}
 
     observer = observer_model.ObserverModel(
-        observation_accuracy=1.0, noise_standard_dev=NOISE_STD_DEV
+        accuracy=OBSERVATION_ACCURACY,
+        fpr=OBSERVATION_FPR,
+        noise_standard_dev=NOISE_STD_DEV,
     )
 
     last_year = 0
@@ -616,9 +590,6 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
         pop_model, change_occurred = events(pop_model, t, TIME_STEPS_PER_YEAR)
 
         # This space here is 'end of year', after events.
-        # Model population changes after the start.
-        # if (t > 0) and (t % TIME_STEPS_PER_YEAR == 0):
-        #     results = pop_model.apply_population_change()
 
         # Showing results.
         if VERBOSE:
@@ -631,7 +602,6 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
                 print("...")
 
         if Month(month) == Month.MAR or Month(month) == Month.OCT:
-            # TODO store as observation data type with date and count?
             observation = observer.observe(pop_model, noisy=True)
             # observation_history.append(observation)
             observation_history[f"{year}-{month}"] = observation
@@ -641,7 +611,7 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
     for year in range(2, MAX_TIME + 1):
         # Ignore first March and last October, as no pre/post to compare to.
         month = Month.MAR.value
-        count_last_year = observation_history[f"{year-1}-{month}"]
+        count_last_year = observation_history[f"{year - 1}-{month}"]
         count_this_year = observation_history[f"{year}-{month}"]
         if count_this_year > count_last_year:
             print("Resistance detected using post-control, year", year)
@@ -655,9 +625,7 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
     # Observation graph.
     plt.plot(
         # range(1, len(observation_history) + 1),
-        [
-            (index + 1) * 0.5 for index, _ in enumerate(observation_history)
-        ],  # TODO Why am I enumerating here? Just use range?
+        [(index + 1) * 0.5 for index, _ in enumerate(observation_history)],
         list(observation_history.values()),
         marker="o",
         linestyle="-",
@@ -822,7 +790,6 @@ def main(MAX_TIME=1, VERBOSE=False, SLOW=False, NOISE_STD_DEV=0.0) -> None:
     print("Graphs of moving averages with a linear fit.")
     coefficients_list = []
     for i in range(1, len(moving_averages) + 1):
-        # TODO check and explain this range
         x = range(1 + window_size, i + 1 + window_size)
         y = moving_averages[:i]
         coefficients = np.polyfit(x, y, 1)
@@ -874,14 +841,7 @@ if __name__ == "__main__":
     args = parse_arguments()
     config(
         use_logger=args.use_logger,
-        log_name=args.log_name,
-        log_level=args.log_level,
         verbose=args.verbose,
     )
     logging.debug("----- BEGIN PROGRAM -----")
-    main(
-        MAX_TIME=args.maxtime,
-        VERBOSE=args.verbose,
-        SLOW=args.slow,
-        NOISE_STD_DEV=args.noise,
-    )
+    main(args)
