@@ -1,6 +1,7 @@
 import argparse
 import logging
 import os
+import time
 from copy import deepcopy
 from enum import Enum
 from math import ceil
@@ -8,10 +9,11 @@ from math import ceil
 import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
-import observer_model
 import pandas as pd
-import population_model
 import seaborn as sns
+
+import observer_model
+import population_model
 import utils
 
 
@@ -35,13 +37,13 @@ def parse_arguments():
         "-a",
         "--accuracy",
         type=float,
-        help="Observation accuracy (float). Default 1.0.",
+        help="Observation accuracy [0-1]. Default 1.0.",
         default=1.0,
     )
     parser.add_argument(
         "--fpr",
         type=float,
-        help="False positive rate of observer (percentage). Default 0.0.",
+        help="False positive rate of observer [0-1]. Default 0.0.",
         default=0.0,
         dest="fpr",
     )
@@ -69,21 +71,18 @@ def parse_arguments():
     return args
 
 
-def config(
-    use_logger=False,
-    verbose=0,
-) -> None:
+def config(use_logger=False, verbose=0) -> None:
     """Defines any configuration for the file."""
 
     if verbose == 0:
         log_level = logging.WARNING  # default
-    elif verbose == 2:
+    elif verbose == 1:
         log_level = logging.INFO
-    elif verbose == 3:
+    elif verbose == 2:
         log_level = logging.DEBUG
-    elif verbose > 3:
+    elif verbose > 2:
         log_level = logging.DEBUG
-        logging.warning("Verbosity set >3 has no effect.")
+        logging.warning("Verbosity set >2 has no effect.")
 
     if use_logger:
         log_folder = "logs"
@@ -386,8 +385,8 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
     ax1.set_ylabel("population (-)")
     ax1.set_ylim(bottom=0)
 
-    ax1.xaxis.set_major_locator(mdates.YearLocator())  # Major ticks every year
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Show only the year
+    ax1.xaxis.set_major_locator(mdates.YearLocator())  # Major ticks every year.
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))  # Show only the year.
 
     ax2 = ax1.twinx()
     # y3 = get_resistance_history(iteration_history, location="overground")
@@ -500,7 +499,7 @@ def events(
         change_occurred = True
         return pop_model, change_occurred
 
-    if year == 1 and Month(month) == Month.FEB:
+    if year == 5 and Month(month) == Month.FEB:
         # Do some event only needed for this month.
         pop_model.add_seeds("Rr", 1_000, location="underground")
         change_occurred = True
@@ -550,7 +549,7 @@ def main(args) -> None:
     VERBOSE = args.verbose
     SLOW = args.slow
     NOISE_STD_DEV = args.noise  # depreciated. TODO remove.
-    OBSERVATION_ACCURACY = args.observation_accuracy
+    OBSERVATION_ACCURACY = args.accuracy
     OBSERVATION_FPR = args.fpr
 
     # If this value is changed, events() must be changed too.
@@ -567,7 +566,7 @@ def main(args) -> None:
     last_year = 0
     # Compute for t amount of years.
     for t in range(0, MAX_TIME * TIME_STEPS_PER_YEAR + 1):
-        logging.debug(f"timestep={t}")
+        logging.debug(f"\ntimestep={t}")
         year = get_year(t, TIME_STEPS_PER_YEAR)
         # TODO Why compute this every time? Just +1 until new year?
         month = get_month(t, TIME_STEPS_PER_YEAR)
@@ -601,7 +600,9 @@ def main(args) -> None:
                 print("...")
 
         if Month(month) == Month.MAR or Month(month) == Month.OCT:
-            observation = observer.observe(pop_model, noisy=True)
+            observation = observer.observe(
+                pop_model, noisy=True, other_populations=[1_000, 300_000]
+            )
             # observation_history.append(observation)
             observation_history[f"{year}-{month}"] = observation
             if VERBOSE:
@@ -842,5 +843,6 @@ if __name__ == "__main__":
         use_logger=args.use_logger,
         verbose=args.verbose,
     )
+    time.sleep(2)  # Give time to see any config warnings.
     logging.debug("----- BEGIN PROGRAM -----")
     main(args)
