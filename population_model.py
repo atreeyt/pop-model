@@ -51,7 +51,7 @@ class PopulationModel:
         )
         logger.debug("Created PopulationModel instance.")
 
-    def germinate_seeds(self, rate, stochastic=False) -> None:
+    def germinate_seeds(self, rate, noisy=False) -> None:
         """Seeds germinate from the seedbank at the given rate.
 
         Seeds are transferred from the underground population to the
@@ -66,9 +66,11 @@ class PopulationModel:
         seed_pop = self._get_population_object(location="underground")
         pop_dict = seed_pop.get_population()
         seeds_dict = {key: pop_dict[key] * rate for key in pop_dict.keys()}
-        if stochastic:
+
+        # Each chromosome is selected from binomial distribution.
+        if noisy:
             for chromosome, count in seeds_dict.items():
-                seeds_dict[chromosome] = np.random.binomial(count, rate, 1)
+                seeds_dict[chromosome] = np.random.binomial(count, rate)
 
         logger.debug("Overground...")
         seed_pop = self._get_population_object(location="overground")
