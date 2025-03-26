@@ -31,7 +31,7 @@ class ObserverModel:
     def set_tpr_and_fnr(self, tpr) -> None:
         self.tpr = tpr
         self.fnr = self.calculate_fnr(self.tpr)
-        logger.info(f"TPR  set to {self.tpr}," f" FNR set to {self.fnr}.")
+        logger.info(f"TPR set to {self.tpr}," f" FNR set to {self.fnr}.")
         return
 
     def observe(
