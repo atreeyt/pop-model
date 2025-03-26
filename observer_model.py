@@ -10,9 +10,7 @@ import population_model
 logger = logging.getLogger(__name__)
 
 
-# TODO add logging
 class ObserverModel:
-
     def __init__(self, tpr: float = 1.0):
         """Create an observer. Use the given TPR (true positive rate).
 
@@ -132,29 +130,6 @@ class ObserverModel:
             )
             new_list = [sum(x) for x in zip(new_list, false_negatives_to_add)]
         logger.debug(f"_redustribute_multinomials: new_list={new_list}")
-        return new_list
-
-    # TODO unused, remove.
-    def _redistribute_counts(self, old_list) -> list:
-        """From a list of numbers, randomly distribute each index into every other index in the list.
-
-        e.g. [10,0,0] -> [0,4,6]
-        e.g. [10,5,0] -> The 10 becomes [0,4,6] and the 5 becomes [2,0,3] -> [2,4,9].
-        The index the number originates from cannot contain any number from the original count.
-        Returns list of new (redistributed) numbers.
-        """
-        logger.warning(
-            "_redistribute_counts() is depreciated. Use _redistribute_multinomials() instead."
-        )
-        list_length = len(old_list)
-        new_list = [0] * list_length
-        for index, val in enumerate(old_list):
-            numbers_to_add = self._random_split_number(val, list_length - 1)
-            # Insert a 0 at index to make the list the same length.
-            numbers_to_add.insert(index, 0)
-            logger.debug(f"numbers_to_add: {numbers_to_add}")
-            new_list = [sum(x) for x in zip(new_list, numbers_to_add)]
-        logger.debug(f"_redistribute_counts(): {new_list}")
         return new_list
 
     def _random_split_number(self, total, list_length):
