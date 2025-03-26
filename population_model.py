@@ -63,14 +63,16 @@ class PopulationModel:
         if rate < 0 or rate == 0 or rate > 1:
             logger.warning(f"germinate_seeds has a unexpected rate: {rate}")
 
-        seed_pop = self._get_population_object(location="underground")
-        pop_dict = seed_pop.get_population()
-        seeds_dict = {key: pop_dict[key] * rate for key in pop_dict.keys()}
+        underground_population = self._get_population_object(location="underground")
+        seeds_dict = underground_population.get_population()
 
         # Each chromosome is selected from binomial distribution.
         if noisy:
             for chromosome, count in seeds_dict.items():
                 seeds_dict[chromosome] = np.random.binomial(count, rate)
+        else:
+            for chromosome, count in seeds_dict.items():
+                seeds_dict[chromosome] = count * rate
 
         logger.debug("Overground...")
         seed_pop = self._get_population_object(location="overground")
