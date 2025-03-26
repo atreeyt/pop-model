@@ -107,9 +107,15 @@ class ObserverModel:
         """
         From a list of multinomials [[TP,FN],[TP,FN],...], distribute
         the FNs between the other indexes.
-        TODO example.
+        e.g. [[9,1],[20,5],[30,10]]:
+            1. The 1 gets split into [0, 0.47..., 0.52...].
+                - Random split, add 0 to INDEX (0 in this case).
+            2. The 5 gets split into [4.51..., 0, 0.48...].
+                - Index is now 1..., etc.
+            3. The 10 gets split into [8.09..., 1.90..., 0].
+            4. The TP values are made into a new list: [9, 20, 30].
+            5. All lists are added together: [21.6..., 22.37..., 31...].
         """
-        # TODO docstring example
         list_length = len(multinomials_list)
         new_list = [0] * list_length
 
