@@ -21,10 +21,7 @@ def parse_arguments():
     """Parses command line arguments."""
     parser = argparse.ArgumentParser(description="")
     parser.add_argument(
-        "-t",
-        "--time",
-        help="Number of years to run the simulation for.",
-        type=int,
+        "-t", "--time", help="Number of years to run the simulation for.", type=int
     )
     parser.add_argument(
         "-n",
@@ -672,14 +669,7 @@ def main(args) -> int:
 
     y1 = observation_history["8-10"]
     plt.hlines(
-        y1,
-        8,
-        15,
-        color="green",
-        linestyles="dashed",
-        linewidth=1,
-        alpha=0.8,
-        label="",
+        y1, 8, 15, color="green", linestyles="dashed", linewidth=1, alpha=0.8, label=""
     )
     plt.text(15.2, y1, f"{y1:,.0f}", ha="left", va="center", c="green")
     y2 = observation_history["9-3"]
@@ -840,10 +830,7 @@ def main(args) -> int:
 
 if __name__ == "__main__":
     args = parse_arguments()
-    config(
-        use_logger=args.use_logger,
-        verbose=args.verbose,
-    )
+    config(use_logger=args.use_logger, verbose=args.verbose)
     time.sleep(2)  # Give time to see any config warnings.
     logging.debug("----- BEGIN PROGRAM -----")
     main(args)
