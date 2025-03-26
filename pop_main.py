@@ -564,6 +564,7 @@ def main(args) -> int:
     OBSERVATION_TPR = args.accuracy
     NOISY_GERMINATION = args.noisy_germination
     NOISY_HERBICIDE = args.noisy_herbicide
+    NOISY_OBSERVATION = args.noisy_observation  # TODO implementation
 
     # If this value is changed, events() must be changed too.
     TIME_STEPS_PER_YEAR = 12
