@@ -82,7 +82,7 @@ def config(args) -> None:
 
     if use_logger:
         log_folder = "logs"
-        log_name = "basic.log"
+        log_name = pathlib.Path(__file__).stem + ".log"
         # Create path logging directory.
         dir_path = os.path.dirname(os.path.realpath(__file__))
         path = os.path.join(dir_path, log_folder, log_name)
