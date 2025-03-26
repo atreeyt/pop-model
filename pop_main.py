@@ -42,6 +42,16 @@ def parse_arguments():
         default=1.0,
     )
     parser.add_argument(
+        "--noisy_germination",
+        action="store_true",
+        help="Make germination events noisy.",
+    )
+    parser.add_argument(
+        "--noisy_herbicide",
+        action="store_true",
+        help="Make herbicide application events noisy.",
+    )
+    parser.add_argument(
         "-s",
         "--slow",
         action="store_true",
@@ -475,7 +485,11 @@ def show_pop_and_res_graph(iteration_history, MAX_TIME, TIME_STEPS_PER_YEAR) -> 
 
 
 def events(
-    pop_model: population_model.PopulationModel, t: int, TIME_STEPS_PER_YEAR: int
+    pop_model: population_model.PopulationModel,
+    t: int,
+    TIME_STEPS_PER_YEAR: int,
+    NOISY_GERMINATION=False,
+    NOISY_HERBICIDE=False,
 ):  # -> tuple[population_model.PopulationModel, bool]:
     """Define events that occur at time t. Returns modified tuple[population model, bool].
 
@@ -505,7 +519,7 @@ def events(
         case Month.JAN:
             pass
         case Month.FEB:
-            pop_model.germinate_seeds(rate=0.7)
+            pop_model.germinate_seeds(rate=0.7, noisy=NOISY_GERMINATION)
             change_occurred = True
         case Month.MAR:
             pass
@@ -524,11 +538,13 @@ def events(
         case Month.SEP:
             pass
         case Month.OCT:
-            pop_model.germinate_seeds(rate=0.7)
+            pop_model.germinate_seeds(rate=0.7, noisy=NOISY_GERMINATION)
             change_occurred = True
         case Month.NOV:
             # An effective herbicide but only targeting susceptible individuals.
-            pop_model.purge_population(0.8, ["rr"], location="overground")
+            pop_model.purge_population(
+                0.8, ["rr"], location="overground", noisy=NOISY_HERBICIDE
+            )
             change_occurred = True
         case Month.DEC:
             pass
@@ -546,6 +562,8 @@ def main(args) -> int:
     VERBOSE = args.verbose
     SLOW = args.slow
     OBSERVATION_TPR = args.accuracy
+    NOISY_GERMINATION = args.noisy_germination
+    NOISY_HERBICIDE = args.noisy_herbicide
 
     # If this value is changed, events() must be changed too.
     TIME_STEPS_PER_YEAR = 12
@@ -576,7 +594,13 @@ def main(args) -> int:
         # This space here is 'start of year', before events.
 
         # Modify population model with any 'events' such as adding seeds.
-        pop_model, change_occurred = events(pop_model, t, TIME_STEPS_PER_YEAR)
+        pop_model, change_occurred = events(
+            pop_model,
+            t,
+            TIME_STEPS_PER_YEAR,
+            NOISY_GERMINATION=NOISY_GERMINATION,
+            NOISY_HERBICIDE=NOISY_HERBICIDE,
+        )
 
         # This space here is 'end of year', after events.
 
