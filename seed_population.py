@@ -69,7 +69,7 @@ class SeedPopulation:
             )
             self.seed_counts[chromosome] = 0
         self.seed_counts[chromosome] += count
-        logger.debug(f"add_seeds: {chromosome} {count}")
+        logger.debug(f"add_seeds: {chromosome} {count:_}")
         return
 
     def remove_seeds(self, chromosome, count) -> None:
