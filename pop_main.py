@@ -37,13 +37,13 @@ def parse_arguments():
         help="Observation accuracy [0-1]. Default 1.0.",
         default=1.0,
     )
-    parser.add_argument(
-        "--fpr",
-        type=float,
-        help="False positive rate of observer [0-1]. Default 0.0.",
-        default=0.0,
-        dest="fpr",
-    )
+    # parser.add_argument(
+    #     "--fpr",
+    #     type=float,
+    #     help="False positive rate of observer [0-1]. Default 0.0.",
+    #     default=0.0,
+    #     dest="fpr",
+    # )
     parser.add_argument(
         "-s",
         "--slow",
@@ -546,20 +546,14 @@ def main(args) -> int:
     MAX_TIME = args.time
     VERBOSE = args.verbose
     SLOW = args.slow
-    NOISE_STD_DEV = args.noise  # depreciated. TODO remove.
     OBSERVATION_ACCURACY = args.accuracy
-    OBSERVATION_FPR = args.fpr
 
     # If this value is changed, events() must be changed too.
     TIME_STEPS_PER_YEAR = 12
     iteration_history: list[population_model.PopulationModel] = []
     observation_history: dict = {}
 
-    observer = observer_model.ObserverModel(
-        accuracy=OBSERVATION_ACCURACY,
-        fpr=OBSERVATION_FPR,
-        noise_standard_dev=NOISE_STD_DEV,
-    )
+    observer = observer_model.ObserverModel(accuracy=OBSERVATION_ACCURACY)
 
     last_year = 0
     # Compute for t amount of years.
