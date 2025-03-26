@@ -1,5 +1,7 @@
+import itertools
 import logging
 import random
+from copy import deepcopy
 
 import numpy as np
 
@@ -11,118 +13,122 @@ logger = logging.getLogger(__name__)
 # TODO add logging
 class ObserverModel:
 
-    def __init__(
-        self,
-        accuracy: float = 1.0,
-        fpr: float = 0.0,
-        noise_standard_dev: float = 5.0,  # TODO remove, depreciated.
-    ):
-        """Create an observer. Use the given accuracy and false positive rate (fpr).
+    def __init__(self, tpr: float = 1.0):
+        """Create an observer. Use the given TPR (true positive rate).
 
+        The false negative rate will be calculated using the given TPR
+            (FPR = 1 - TPR).
         Other noise parameters are defined within the observe function.
-
-        accuracy: float
-        fpr : float : false positive rate. 1.0 is 100% misclassification.
+        tpr (true positive rate) : float : [0-1]
         """
-        self.accuracy = accuracy
+        self.set_tpr_and_fnr(tpr)
 
-        self.observation_noise_standard_dev = noise_standard_dev
-        self.fpr = fpr
+    def calculate_fnr(self, tpr) -> float:
+        """Calculate false negative rate. Return as a float."""
+        fnr = 1 - tpr
+        return fnr
 
-        logger.info(
-            f"Accuracy set to {self.accuracy},"
-            f" FPR set to {self.fpr}."
-            # f" noise set to {self.observation_noise_standard_dev}."
-            # " This means practical minimum is:"
-            # f" {round(self.observation_accuracy-3*self.observation_noise_standard_dev,2)}"
-            # " and practical maximum is"
-            # f" {round(self.observation_accuracy+3*self.observation_noise_standard_dev,2)}"
-        )
+    def set_tpr_and_fnr(self, tpr) -> None:
+        self.tpr = tpr
+        self.fnr = self.calculate_fnr(self.tpr)
+        logger.info(f"TPR  set to {self.tpr}," f" FNR set to {self.fnr}.")
+        return
 
     def observe(
         self,
         pop_model: population_model.PopulationModel,
-        accuracy=None,
+        tpr=None,
         noisy=False,
         other_populations: list = [],
-        fpr=None,
-    ):
+    ) -> float:
         """Observe the overground population. Returns count of population.
 
         pop_model : PopulationModel class instance.
-        accuracy : float
-            - By specificying an accuracy, the class variable accuracy
-            can be overrided.
+        tpr : float
+            - By specificying a true positive rate (TPR), the class
+            variable tpr can be overridden.
         other_populations : list[int/float]
-            - List of populations that will combine with the FPR of the
-            observer.
+            - List of populations that will combine with the TPR/FNR of
+            the observer.
         noisy : bool
             - Compute a noisy accuracy or not.
             - self.noise_standard_dev class variable controls the
             variability of this noise. TODO depreciated.
-        fpr : float
-            - False positive rate of the observer. Overrides the class
-            variable fpr.
-            - fpr combines with other_populations to randomly
-            distribute the false predictions.
+        NOTE: False negative rate (fnr) will be calculated with the
+            given TPR value. If none is given the class FNR
+            (calculated using the class TPR) will be used.
         """
 
-        if accuracy is None:
-            accuracy = self.accuracy
-            logger.debug(f"No given accuracy, using class accuracy {self.accuracy}.")
-
-        if not (0 <= accuracy <= 1):
-            logger.error(
-                "Observation accuracy may be set incorrectly:",
-                accuracy,
+        if tpr is None:
+            tpr = self.tpr
+            fnr = self.fnr
+            logger.debug(
+                f"No given TPR, using class TPR {self.tpr},"
+                f" using class FNR {self.fnr}."
             )
 
-        if fpr is None:
-            fpr = self.fpr
-            logger.debug(f"No given fpr, using class fpr {self.fpr}.")
+        if not (0 <= tpr <= 1):
+            logger.error("Observation TPR may be set incorrectly:", tpr)
 
-        if not (0 <= fpr <= 1):
-            logger.error("FPR may be set incorrectly:", fpr)
+        if not (0 <= fnr <= 1):
+            logger.error("Observation FNR  may be set incorrectly:", fnr)
 
-        if fpr > 0 and len(other_populations) == 0:
+        if fnr > 0 and len(other_populations) == 0:
             logger.error("FPR set > 0 but no other_population list was given.")
 
-        POPULATION = pop_model.get_population(location="overground")
-        count = sum(POPULATION.values())
-        # poisson = np.random.poisson(count, 1)
-        other_populations.insert(0, count)
-        # Randomly 'observe' the populations.
-        noisy_all_populations = (
-            [np.random.binomial(pop, self.accuracy) for pop in other_populations]
-            if noisy
-            else other_populations
-        )
-        logger.debug(f"Noisy set to {noisy}. noisy_all_populations=")
-        logger.debug(noisy_all_populations)
+        # Add the overground population to the other_population list.
+        OVERGROUND_POPULATION = pop_model.get_population(location="overground")
+        overground_count = sum(OVERGROUND_POPULATION.values())
 
-        num_individuals_fp_from_each_pop = [i * fpr for i in noisy_all_populations]
-        logger.debug("Number of individuals that are FP:")
-        logger.debug(num_individuals_fp_from_each_pop)
-        fpr_population = self._redistribute_counts(num_individuals_fp_from_each_pop)
-        logger.debug(f"fpr_population={fpr_population}")
+        # Randomly 'observe' the populations using a multinomial
+        # distribution. Result of [# TPs, # FNs] sums to 1 (no noise).
+        if noisy:
+            multinomials = [
+                # np.random.binomial(pop, tpr)
+                np.random.multinomial(pop, [tpr, fnr])
+                for pop in itertools.chain([overground_count], other_populations)
+            ]
+            # The false negatives are randomly distributed to the other
+            # populations.
+            all_populations = self._redistribute_multinomials(multinomials)
+            # Map np.float to float.
+            all_populations = list(map(float, all_populations))
+        else:
+            # Copy the list so we do not have two variables for the same list.
+            all_populations = deepcopy(other_populations).insert(0, overground_count)
+        logger.debug(f"Noisy set to {noisy}. all_populations=")
+        logger.debug(all_populations)
 
-        observed_count = noisy_all_populations[0] + fpr_population[0]
-        logger.debug(f"returning observed_count {observed_count}")
+        observed_count = all_populations[0]
+        logger.debug(f"observe: returning observed_count={observed_count}")
         return observed_count
-        """
-        # if noisy:
-        # accuracy = self.get_noisy_accuracy(
-        # accuracy, self.observation_noise_standard_dev
-        # )
 
-        count = 0
-        POPULATION = pop_model.get_population(location="overground")
-        for key, val in POPULATION.items():
-            # Accuracy is returned as a list, but only has one value.
-            count += val * accuracy
-        return count
+    def _redistribute_multinomials(self, multinomials_list) -> list:
         """
+        From a list of multinomials [[TP,FN],[TP,FN],...], distribute
+        the FNs between the other indexes.
+        TODO example.
+        """
+        # TODO docstring example
+        list_length = len(multinomials_list)
+        new_list = [0] * list_length
 
+        for index, val in enumerate(multinomials_list):
+            tp, fn = val
+            new_list[index] += tp
+            # Split the false negative number into a list of smaller numbers.
+            # e.g. 10 -> [3,7]. Then insert 0 at index, e.g. [0,3,7] to
+            # allow this list and new_list to be added together.
+            false_negatives_to_add = self._random_split_number(fn, list_length - 1)
+            false_negatives_to_add.insert(index, 0)
+            logger.debug(
+                f"_redistribute_multinomials: false_negatives_to_add={false_negatives_to_add}"
+            )
+            new_list = [sum(x) for x in zip(new_list, false_negatives_to_add)]
+        logger.debug(f"_redustribute_multinomials: new_list={new_list}")
+        return new_list
+
+    # TODO unused, remove.
     def _redistribute_counts(self, old_list) -> list:
         """From a list of numbers, randomly distribute each index into every other index in the list.
 
@@ -131,6 +137,9 @@ class ObserverModel:
         The index the number originates from cannot contain any number from the original count.
         Returns list of new (redistributed) numbers.
         """
+        logger.warning(
+            "_redistribute_counts() is depreciated. Use _redistribute_multinomials() instead."
+        )
         list_length = len(old_list)
         new_list = [0] * list_length
         for index, val in enumerate(old_list):
@@ -151,14 +160,3 @@ class ObserverModel:
         nums = [split_points[i + 1] - split_points[i] for i in range(list_length)]
         # logger.debug(f"_random_split_number: {nums}")
         return nums
-
-    # Unused?
-    # def get_noisy_accuracy(self, accuracy, noise_standard_dev) -> float:
-    #     """TODO
-
-    #     TODO
-    #     """
-    #     # TODO change from gaussian to a different distribution (idk which)
-    #     noise = np.random.normal(accuracy, noise_standard_dev, 1)
-    #     noise_list = list(map(float, noise))
-    #     return noise_list[0]
