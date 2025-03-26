@@ -72,8 +72,10 @@ def parse_arguments():
     return args
 
 
-def config(use_logger=False, verbose=0) -> None:
+def config(args) -> None:
     """Defines any configuration for the file."""
+    use_logger = args.use_logger
+    verbose = args.verbose
 
     if verbose == 0:
         log_level = logging.WARNING  # default
@@ -828,7 +830,7 @@ def main(args) -> int:
 
 if __name__ == "__main__":
     args = parse_arguments()
-    config(use_logger=args.use_logger, verbose=args.verbose)
+    config(args=args)
     time.sleep(2)  # Give time to see any config warnings.
     logging.debug("----- BEGIN PROGRAM -----")
-    main(args)
+    main(args=args)
