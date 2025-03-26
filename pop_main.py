@@ -544,7 +544,8 @@ def events(
     return pop_model, change_occurred
 
 
-def main(args) -> None:
+def main(args) -> int:
+    """Driver code. Returns 0 on success."""
     MAX_TIME = args.time
     VERBOSE = args.verbose
     SLOW = args.slow
@@ -834,7 +835,7 @@ def main(args) -> None:
     #     round(i * 100, 4) for i in calculate_percent_change(survival_rates)
     # ]
 
-    return
+    return 0
 
 
 if __name__ == "__main__":
