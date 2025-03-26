@@ -62,7 +62,7 @@ class SeedPopulation:
         Warning given for adding seeds of an unknown chromosome.
         """
 
-        if not chromosome in self.seed_counts.keys():
+        if chromosome not in self.seed_counts.keys():
             logger.warning(
                 f"Seed type {chromosome} does not exist in population already."
                 f" Adding {count} seeds. Is this expected?"
@@ -79,7 +79,7 @@ class SeedPopulation:
         more seeds than are currently in the population.
         """
 
-        if not chromosome in self.seed_counts.keys():
+        if chromosome not in self.seed_counts.keys():
             logger.warning(
                 f"Attempted to remove {count} {chromosome} seeds from population but"
                 " this seed type does not exist in the population. No effect."
@@ -105,7 +105,7 @@ class SeedPopulation:
         chromosome. In this case the seeds are ADDED to the population.
         """
 
-        if not chromosome in self.seed_counts.keys():
+        if chromosome not in self.seed_counts.keys():
             logger.warning(
                 f"Attempted to replace {count} {chromosome} seeds from population but"
                 " this seed type does not exist in the population. ADDING seeds of new"
