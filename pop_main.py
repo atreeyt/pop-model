@@ -34,7 +34,11 @@ def parse_arguments():
         "-a",
         "--accuracy",
         type=float,
-        help="Observation accuracy [0-1]. Default 1.0.",
+        help=(
+            "Observation true positive rate [0-1]."
+            " Errorenous predictions are calculated via 1-accuracy."
+            " Default 1.0."
+        ),
         default=1.0,
     )
     # parser.add_argument(
@@ -546,14 +550,14 @@ def main(args) -> int:
     MAX_TIME = args.time
     VERBOSE = args.verbose
     SLOW = args.slow
-    OBSERVATION_ACCURACY = args.accuracy
+    OBSERVATION_TPR = args.accuracy
 
     # If this value is changed, events() must be changed too.
     TIME_STEPS_PER_YEAR = 12
     iteration_history: list[population_model.PopulationModel] = []
     observation_history: dict = {}
 
-    observer = observer_model.ObserverModel(accuracy=OBSERVATION_ACCURACY)
+    observer = observer_model.ObserverModel(tpr=OBSERVATION_TPR)
 
     last_year = 0
     # Compute for t amount of years.
