@@ -41,13 +41,6 @@ def parse_arguments():
         ),
         default=1.0,
     )
-    # parser.add_argument(
-    #     "--fpr",
-    #     type=float,
-    #     help="False positive rate of observer [0-1]. Default 0.0.",
-    #     default=0.0,
-    #     dest="fpr",
-    # )
     parser.add_argument(
         "-s",
         "--slow",
