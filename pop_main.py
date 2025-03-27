@@ -25,13 +25,6 @@ def parse_arguments():
         "-t", "--time", help="Number of years to run the simulation for.", type=int
     )
     parser.add_argument(
-        "-n",
-        "--noise",
-        type=float,
-        help="Noise standard deviation (float).",
-        default=0.0,
-    )
-    parser.add_argument(
         "-a",
         "--accuracy",
         type=float,
