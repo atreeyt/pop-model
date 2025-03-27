@@ -144,9 +144,6 @@ class PopulationModel:
             return self.seed_pop_underground
         elif location == "overground":
             return self.seed_pop_overground
-        else:
-            logging.error("location should be ['underground','overground']")
-            exit(0)
 
     def purge_population(
         self,
