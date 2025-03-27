@@ -18,6 +18,21 @@ import population_model
 import utils
 
 
+def parse_dict_item(item):
+    print("HERE")
+    print(item)
+    if len(item) == 2:
+        key, value = item
+        return (key, float(value), 0, 1)
+    elif len(item) == 4:
+        key, value, year, month = item
+        return (key, float(value), int(year), int(month))
+    else:
+        raise argparse.ArgumentTypeError(
+            "Each --add_seeds must have either 2 or 4 arguments"
+        )
+
+
 def parse_arguments():
     """Parses command line arguments."""
     parser = argparse.ArgumentParser(description="")
@@ -56,6 +71,16 @@ def parse_arguments():
         "--noisy_herbicide",
         action="store_true",
         help="Make herbicide application events noisy.",
+    )
+    parser.add_argument(
+        "--add_seeds",
+        action="append",
+        nargs="+",
+        type=parse_dict_item,
+        # metavar=("CHROMOSOME", "COUNT", "YEAR", "MONTH"),
+        help="Add seeds to starting population. Year and Month are optional."
+        " e.g. 'RR 999 0 1' adds 999 RR seeds at the very beginning."
+        " e.g. 'Rr 1 5 12' adds 1 Rr seeds in December in year 5.",
     )
     parser.add_argument(
         "-s",
@@ -496,6 +521,7 @@ def events(
     NOISY_HERBICIDE=False,
     GERMINATION_RATE=0.7,
     HERBICIDE_RATE=0.8,
+    add_seeds: list = None,
 ):  # -> tuple[population_model.PopulationModel, bool]:
     """Define events that occur at time t. Returns modified tuple[population model, bool].
 
@@ -507,6 +533,14 @@ def events(
     change_occurred = False
     year = get_year(t, TIME_STEPS_PER_YEAR)
     month = get_month(t, TIME_STEPS_PER_YEAR)
+
+    if add_seeds:
+        for entry in add_seeds:
+            entry_chromosome, entry_count, entry_year, entry_month = entry
+            if entry_year == year and Month(entry_month) == Month(month):
+                pop_model.add_seeds(
+                    entry_chromosome, entry_count, location="underground"
+                )
 
     if t == 0:
         # Herbicide resistant biotypes occur at frequencies of 10e-8
@@ -575,7 +609,8 @@ def main(args) -> int:
     GERMINATION_RATE = args.germination
     NOISY_GERMINATION = args.noisy_germination
     NOISY_HERBICIDE = args.noisy_herbicide
-    NOISY_OBSERVATION = args.noisy_observation  # TODO implementation
+    # NOISY_OBSERVATION = args.noisy_observation  # TODO implementation
+    CLI_ADD_SEEDS = args.add_seeds
 
     TIME_STEPS_PER_YEAR = 12
     iteration_history: list[population_model.PopulationModel] = []
@@ -612,6 +647,7 @@ def main(args) -> int:
             NOISY_HERBICIDE=NOISY_HERBICIDE,
             GERMINATION_RATE=GERMINATION_RATE,
             HERBICIDE_RATE=HERBICIDE_RATE,
+            add_seeds=CLI_ADD_SEEDS,
         )
 
         # This space here is 'end of year', after events.
