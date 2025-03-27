@@ -74,7 +74,7 @@ class SeedPopulation:
         return
 
     def remove_seeds(self, chromosome, count) -> None:
-        """Set value to 0 in seed_counts dict for chromosome key.
+        """Remove seeds in seed_counts dict for chromosome key.
 
         Warnings are given for unknown an chromosome or for removing
         more seeds than are currently in the population.
