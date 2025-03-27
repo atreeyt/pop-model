@@ -1,4 +1,5 @@
 import logging
+from copy import copy
 
 import numpy as np
 
@@ -148,70 +149,63 @@ class PopulationModel:
     def purge_population(
         self,
         amount_to_remove,
-        chromosome_list,
         location,
-        stochastic=False,
-        print_to_console=True,
+        chromosome_list=None,
+        noisy=False,
+        # print_to_console=True,
     ) -> None:
         """Remove an absolute value or percentage from the seed
         population.
 
-        The amount to remove is assumed to be a percentage if <=1. This
-        action is printed to the console for clarity to the user. If
-        this is not desirable use print_to_console=False or
-        remove_seeds() for silent usage. chromosome_list is a list of
-        chromosomes to remove, e.g. ["rr"] or ["rR", "Rr", "rr"].
+        The amount to remove is assumed to be a percentage if <=1.
+        location : ['overground, 'underground'] - typically overground.
+        chromosome_list is a list of chromosomes to remove,
+            e.g. ["rr"] or ["rR", "Rr", "rr"].
+        The noisy flag enables sampling from a:
+            - Poisson distribution (for absolute values),
+            - Binomial distribution (for percentages).
         """
-        """refactor all of this. make just have a single exit point.
-        the logic is becoming too complex and too difficult to follow
-        simplify!
-        """
+
         if amount_to_remove < 0:
-            logging.warning("Attempted population purge with negative value, ignoring.")
+            logger.warning("Attempted population purge with negative value, ignoring.")
             return
+
+        if chromosome_list is not None and len(chromosome_list) == 0:
+            logger.warning("purge_population: chromosome_list is empty.")
 
         seed_pop = self._get_population_object(location)
         current_population = seed_pop.get_population()
 
-        if amount_to_remove <= 1:  # Assume percentage.
-            pass
+        if not chromosome_list:
+            chromosome_list = seed_pop.get_population().keys()
 
-        elif amount_to_remove > 1:  # Otherwise assume absolute value.
-            pass
-
+        rng = np.random.default_rng()
         for chromosome in chromosome_list:
-            if print_to_console:
+            if amount_to_remove <= 1:  # Assume percentage.
                 logger.info(
-                    f"Purging {amount_to_remove} {chromosome} seeds from {location}."
+                    f"Purging {amount_to_remove*100}%"
+                    f" of population ({chromosome})"
+                    f" from {location}..."
                 )
-            seed_pop.remove_seeds(chromosome, amount_to_remove)
-        # return
-
-        # ==============
-        # Assume percentage.
-        if amount_to_remove <= 1:
-            if not chromosome_list:
-                chromosome_list = seed_pop.get_population().keys()
-            for chromosome in chromosome_list:
-
-                if print_to_console:
-                    logger.info(
-                        f"Purging~{amount_to_remove*100}% of {chromosome} seeds from"
-                        f" {location}."
+                if noisy:
+                    absolute_to_remove = rng.binomial(
+                        current_population[chromosome], amount_to_remove
                     )
-                count = seed_pop.get_population()[chromosome]
-                seed_pop.remove_seeds(chromosome, count * amount_to_remove)
+                else:
+                    absolute_to_remove = (
+                        current_population[chromosome] * amount_to_remove
+                    )
 
-            return
-
-        # Otherwise assume absolute value.
-        for chromosome in chromosome_list:
-            # Add in stochastic option.
-            if print_to_console:
+            else:  # Assume absolute value.
                 logger.info(
-                    f"Purging {amount_to_remove} {chromosome} seeds from {location}."
+                    f"Purging {absolute_to_remove} {chromosome} seeds from {location}."
                 )
-            seed_pop.remove_seeds(chromosome, amount_to_remove)
+                if noisy:
+                    absolute_to_remove = rng.poisson(amount_to_remove)
+                else:
+                    absolute_to_remove = copy(amount_to_remove)
+
+            seed_pop.remove_seeds(chromosome, absolute_to_remove)
 
         return
 
