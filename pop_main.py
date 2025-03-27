@@ -198,8 +198,6 @@ def get_t_from_month_year(MONTH, TIME_STEPS_PER_YEAR, YEAR=None) -> list:
     """Return the timesteps that correlates to MONTH.
 
     If YEAR, return a list with a single element of MONTH and YEAR.
-
-    TODO this is horribly inefficient
     """
 
     list_of_t = []
