@@ -1,4 +1,5 @@
 import logging
+from copy import copy
 
 logger = logging.getLogger(__name__)
 
@@ -31,7 +32,7 @@ class SeedPopulation:
         """
         if key:
             return {key: self.seed_counts[key]}
-        return self.seed_counts
+        return copy(self.seed_counts)
 
     def get_frequency(self, find_key=None) -> dict:
         """Returns the frequency of each seed type within the population.
