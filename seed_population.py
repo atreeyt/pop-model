@@ -66,7 +66,7 @@ class SeedPopulation:
         if chromosome not in self.seed_counts.keys():
             logger.warning(
                 f"Seed type {chromosome} does not exist in population already."
-                f" Adding {count} seeds. Is this expected?"
+                f" Adding {count:_} seeds. Is this expected?"
             )
             self.seed_counts[chromosome] = 0
         self.seed_counts[chromosome] += count
@@ -82,7 +82,7 @@ class SeedPopulation:
 
         if chromosome not in self.seed_counts.keys():
             logger.warning(
-                f"Attempted to remove {count} {chromosome} seeds from population but"
+                f"Attempted to remove {count:_} {chromosome} seeds from population but"
                 " this seed type does not exist in the population. No effect."
             )
             return
@@ -90,13 +90,13 @@ class SeedPopulation:
         current_count = self.seed_counts[chromosome]
         if current_count < count:
             logger.warning(
-                f"Attempted to remove {count} {chromosome} seeds from population when"
+                f"Attempted to remove {count:_} {chromosome} seeds from population when"
                 f" only {current_count} seeds exist. Setting to 0."
             )
             self.seed_counts[chromosome] = 0
         else:
             self.seed_counts[chromosome] -= count
-        logger.debug(f"remove_seeds: {chromosome} {count}")
+        logger.debug(f"remove_seeds: {chromosome} {count:_}")
         return
 
     def replace_seeds(self, chromosome, count):
@@ -108,7 +108,7 @@ class SeedPopulation:
 
         if chromosome not in self.seed_counts.keys():
             logger.warning(
-                f"Attempted to replace {count} {chromosome} seeds from population but"
+                f"Attempted to replace {count:_} {chromosome} seeds from population but"
                 " this seed type does not exist in the population. ADDING seeds of new"
                 " type. Is this expected behaviour?"
             )
