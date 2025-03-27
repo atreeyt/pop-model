@@ -577,7 +577,6 @@ def main(args) -> int:
     NOISY_HERBICIDE = args.noisy_herbicide
     NOISY_OBSERVATION = args.noisy_observation  # TODO implementation
 
-    # If this value is changed, events() must be changed too.
     TIME_STEPS_PER_YEAR = 12
     iteration_history: list[population_model.PopulationModel] = []
     observation_history: dict = {}
@@ -589,7 +588,6 @@ def main(args) -> int:
     for t in range(0, MAX_TIME * TIME_STEPS_PER_YEAR + 1):
         logging.debug(f"\ntimestep={t}")
         year = get_year(t, TIME_STEPS_PER_YEAR)
-        # TODO Why compute this every time? Just +1 until new year?
         month = get_month(t, TIME_STEPS_PER_YEAR)
         if VERBOSE:
             # Every year pause and wait for confirmation to continue.
