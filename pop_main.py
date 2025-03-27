@@ -272,7 +272,7 @@ def get_month_name(month_num) -> str:
 def pretty_print_dict(dictionary, indent=0, use_tabs=False) -> None:
     for key, val in dictionary.items():
         char = "\t" if use_tabs else " "
-        print(f"{char * indent}{key} : {val}")
+        print(f"{char * indent}{key} : {val:_}")
     return
 
 
