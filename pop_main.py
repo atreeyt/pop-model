@@ -43,11 +43,23 @@ def parse_arguments():
         default=1.0,
     )
     parser.add_argument(
+        "-g", "--germination", type=float, help="Germination rate [0-1].", default=0.7
+    )
+    parser.add_argument(
+        "-he",
+        "--herbicide",
+        type=float,
+        help="Herbicide effiacy rate [0-1].",
+        default=0.8,
+    )
+    parser.add_argument(
+        "-ng",
         "--noisy_germination",
         action="store_true",
         help="Make germination events noisy.",
     )
     parser.add_argument(
+        "-nh",
         "--noisy_herbicide",
         action="store_true",
         help="Make herbicide application events noisy.",
@@ -489,6 +501,8 @@ def events(
     TIME_STEPS_PER_YEAR: int,
     NOISY_GERMINATION=False,
     NOISY_HERBICIDE=False,
+    GERMINATION_RATE=0.7,
+    HERBICIDE_RATE=0.8,
 ):  # -> tuple[population_model.PopulationModel, bool]:
     """Define events that occur at time t. Returns modified tuple[population model, bool].
 
@@ -518,7 +532,7 @@ def events(
         case Month.JAN:
             pass
         case Month.FEB:
-            pop_model.germinate_seeds(rate=0.7, noisy=NOISY_GERMINATION)
+            pop_model.germinate_seeds(rate=GERMINATION_RATE, noisy=NOISY_GERMINATION)
             change_occurred = True
         case Month.MAR:
             pass
@@ -537,12 +551,15 @@ def events(
         case Month.SEP:
             pass
         case Month.OCT:
-            pop_model.germinate_seeds(rate=0.7, noisy=NOISY_GERMINATION)
+            pop_model.germinate_seeds(rate=GERMINATION_RATE, noisy=NOISY_GERMINATION)
             change_occurred = True
         case Month.NOV:
             # An effective herbicide but only targeting susceptible individuals.
             pop_model.purge_population(
-                0.8, ["rr"], location="overground", noisy=NOISY_HERBICIDE
+                amount_to_remove=HERBICIDE_RATE,
+                location="overground",
+                chromosome_list=["rr"],
+                noisy=NOISY_HERBICIDE,
             )
             change_occurred = True
         case Month.DEC:
@@ -561,6 +578,8 @@ def main(args) -> int:
     VERBOSE = args.verbose
     SLOW = args.slow
     OBSERVATION_TPR = args.accuracy
+    HERBICIDE_RATE = args.herbicide
+    GERMINATION_RATE = args.germination
     NOISY_GERMINATION = args.noisy_germination
     NOISY_HERBICIDE = args.noisy_herbicide
     NOISY_OBSERVATION = args.noisy_observation  # TODO implementation
@@ -600,6 +619,8 @@ def main(args) -> int:
             TIME_STEPS_PER_YEAR,
             NOISY_GERMINATION=NOISY_GERMINATION,
             NOISY_HERBICIDE=NOISY_HERBICIDE,
+            GERMINATION_RATE=GERMINATION_RATE,
+            HERBICIDE_RATE=HERBICIDE_RATE,
         )
 
         # This space here is 'end of year', after events.
